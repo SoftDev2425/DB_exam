@@ -1,0 +1,74 @@
+-- Create Users Table with Indexes
+CREATE TABLE Users (
+  UserID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  FirstName VARCHAR(50) NOT NULL,
+  LastName VARCHAR(50) NOT NULL,
+  Email VARCHAR(255) UNIQUE NOT NULL,
+  PasswordHash VARCHAR(255),
+  DateOfBirth DATE,
+  Gender CHAR(1),
+  CreatedAt DATETIME DEFAULT GETDATE(),
+  UpdatedAt DATETIME DEFAULT GETDATE(),
+  IsAnonymized BIT DEFAULT 0
+);
+
+-- Create Books Table with Indexes and Constraints
+CREATE TABLE Books (
+  BookID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  ISBN VARCHAR(20) UNIQUE NOT NULL,
+  Title VARCHAR(255) NOT NULL,
+  Author VARCHAR(255),
+  PublishedDate DATE,
+  Genre VARCHAR(50),
+  Format VARCHAR(50),
+  StockQuantity INT CHECK (StockQuantity >= 0),
+  Price DECIMAL(10, 2),
+  CreatedAt DATETIME DEFAULT GETDATE(),
+  UpdatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- Create Orders Table with Indexes
+CREATE TABLE Orders (
+  OrderID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  UserID UNIQUEIDENTIFIER NOT NULL,
+  OrderDate DATETIME DEFAULT GETDATE(),
+  TotalAmount DECIMAL(10, 2),
+  ShippingAddress VARCHAR(255),
+  ShippingCity VARCHAR(50),
+  Status VARCHAR(50) DEFAULT 'Pending',
+  CreatedAt DATETIME DEFAULT GETDATE(),
+  UpdatedAt DATETIME DEFAULT GETDATE(), 
+  FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE NO ACTION
+);
+
+-- Create OrderLine Table with Indexes
+CREATE TABLE OrderLine (
+  OrderLineID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  OrderID UNIQUEIDENTIFIER,
+  BookID UNIQUEIDENTIFIER,
+  Quantity INT CHECK (Quantity > 0),
+  UnitPrice DECIMAL(10, 2),
+  FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE NO ACTION,
+  FOREIGN KEY (BookID) REFERENCES Books(BookID) ON DELETE NO ACTION
+);
+
+-- Create Reviews Table with Indexes
+CREATE TABLE Reviews (
+  ReviewID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  UserID UNIQUEIDENTIFIER NOT NULL,
+  BookID UNIQUEIDENTIFIER,
+  Rating INT CHECK (Rating BETWEEN 1 AND 5),
+  Comment VARCHAR(2000),
+  CreatedAt DATETIME DEFAULT GETDATE(),
+  UpdatedAt DATETIME DEFAULT GETDATE(),
+  FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE NO ACTION,
+  FOREIGN KEY (BookID) REFERENCES Books(BookID)
+);
+
+-- Adding Indexes for performance optimization
+CREATE INDEX IDX_Books_ISBN ON Books(ISBN);
+CREATE INDEX IDX_Orders_UserID ON Orders(UserID);
+CREATE INDEX IDX_OrderLine_OrderID ON OrderLine(OrderID);
+CREATE INDEX IDX_OrderLine_BookID ON OrderLine(BookID);
+CREATE INDEX IDX_Reviews_UserID ON Reviews(UserID);
+CREATE INDEX IDX_Reviews_BookID ON Reviews(BookID);
