@@ -6,7 +6,20 @@ const bookMetadataSchema: Schema = new Schema(
     isbn: { type: String, required: true, unique: true },
     authors: { type: [String], required: true },
     publishedDate: { type: Date, required: true },
-    genres: 
+    genres: { type: [String], required: true },
+    format: { type: String, required: true },
+    pageCount: { type: Number, required: true },
+    publisher: { type: String, required: true },
+    weight: { type: Number, default: 0 },
+    shortDescription: { type: String, required: true },
+    longDescription: { type: String, required: true },
+    thumbnailUrl: { type: String, required: true },
+    ratings: {
+      averageRating: { type: Number, default: 0 },
+      totalReviews: { type: Number, default: 0 },
+    },
+    language: { type: String, required: true },
+    price: { type: Number, required: true },
   },
   { timestamps: true }
 );
