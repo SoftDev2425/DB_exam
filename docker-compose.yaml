@@ -1,0 +1,44 @@
+version: "3.7"
+name: bookstore-exam
+services:
+  mssql-bookstore:
+    image: mcr.microsoft.com/azure-sql-edge
+    environment:
+      SA_PASSWORD: "StrongPassword123!"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+
+  redis-bookstore:
+    image: redis:7.0.11-alpine
+    restart: always
+    command: redis-server --requirepass "example"
+    volumes:
+      - ./docker-data/redis-bookstore:/data
+    ports:
+      - 6379:6379
+
+  mongo-bookstore:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - ./docker-data/mongo:/data/db
+
+  neo4j-bookstore:
+    image: neo4j:latest
+    restart: always
+    ports:
+      - "7474:7474" # HTTP
+      - "7687:7687" # BOLT
+    environment:
+      NEO4J_AUTH: neo4j/12345678
+    volumes:
+      - ./docker-data/neo4j:/data
+
+volumes:
+  mssql-data:
+  neo4j-data:
