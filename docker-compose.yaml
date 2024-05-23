@@ -12,7 +12,7 @@ services:
       - mssql-data:/var/opt/mssql
 
   redis-bookstore:
-    image: redis:7.0.11-alpine
+    image: redis:7.2.5-alpine
     restart: always
     command: redis-server --requirepass "example"
     volumes:
