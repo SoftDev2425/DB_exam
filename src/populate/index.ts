@@ -36,6 +36,8 @@ const scrapeAndInsertIntoDBs = async () => {
       50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600,
     ];
 
+    await mongoose.connection.db.dropDatabase();
+
     for (const book of books) {
       let generatedStockQuantity = Math.floor(Math.random() * 11);
       let generatedPrice = prices[Math.floor(Math.random() * prices.length)];

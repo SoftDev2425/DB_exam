@@ -5,6 +5,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import router from "./routes";
 import mongoose from "mongoose";
+import bodyParser from "body-parser";
+
 
 // Create Express server
 const app = express(); // New express instance
@@ -14,6 +16,7 @@ const port = 3000; // Port number
 app.use(cors()); // Enable CORS
 app.use(helmet()); // Enable Helmet
 app.use(morgan("dev")); // Enable Morgan
+app.use(bodyParser.json()); // Enable JSON parsing
 
 mongoose
   .connect("mongodb://localhost:27017/BookStore")

@@ -1,8 +1,3 @@
-CREATE TABLE Roles (
-  RoleID INT PRIMARY KEY IDENTITY(1,1),
-  RoleName VARCHAR(50) UNIQUE NOT NULL
-);
-
 -- Create Users Table with Indexes
 CREATE TABLE Users (
   UserID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
@@ -15,8 +10,7 @@ CREATE TABLE Users (
   CreatedAt DATETIME DEFAULT GETDATE(),
   UpdatedAt DATETIME DEFAULT GETDATE(),
   IsAnonymized BIT DEFAULT 0,
-  RoleID INT,
-  CONSTRAINT FK_UserRole FOREIGN KEY (RoleID) REFERENCES Roles(RoleID)
+  Role VARCHAR(50) DEFAULT 'USER',
 );
 
 -- Create Books Table with Indexes and Constraints
