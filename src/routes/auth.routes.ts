@@ -51,38 +51,45 @@ router.post("/login", async (req: Request, res: Response) => {
     // Validate the received login details
     UserLoginSchema.parse(req.body);
 
-    // If there is an error in received login details , then return 400 status code and the error message.
-
+    // If there is an error in received login details, return 400 status code and the error message
     const con = await sql.connect(mssqlConfig);
     const result = await con.query`SELECT * FROM Users WHERE email = ${req.body.email}`;
 
     if (result.recordset.length === 0) {
-      res.status(400).json({ message: "Account does not exist!" });
+      return res.status(400).json({ message: "Account does not exist!" });
     }
 
     const user = result.recordset[0];
 
-    // Compare the password with the hashed password in the database.
+    // Compare the password with the hashed password in the database
     const validPassword = await bcrypt.compare(req.body.password, user.PasswordHash);
     if (!validPassword) {
-      res.status(400).json({ message: "Invalid password!" });
+      return res.status(400).json({ message: "Invalid password!" });
     }
 
-    // check if the user is active
-    const sessionTokenExists = await redisClient.exists(`sessionToken-${user.UserID}`);
+    // Get the current session tokens for the user
+    const userSessionsKey = `userSessions-${user.UserID}`;
+    const userSessions = await redisClient.lRange(userSessionsKey, 0, -1);
 
-    if (sessionTokenExists) {
-      // delete the token
-      await redisClient.del(`sessionToken-${user.UserID}`);
+    // If the user has 3 sessions, remove the oldest one
+    if (userSessions.length >= 3) {
+      const oldestSessionToken = userSessions[0];
+      await redisClient.del(`sessionToken-${oldestSessionToken}`);
+      await redisClient.lPop(userSessionsKey);
     }
 
+    // Generate a new session token
     const sessionToken = crypto.randomUUID();
-    const sessionTokenExpiry = req.body.rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
+    const sessionTokenExpiry = req.body.rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 days if rememberMe is true, else 1 day
 
-    // Create a token for the user stored in redis.
-    await redisClient.set(`sessionToken-${user.UserID}`, sessionToken, {
+    // Store the session token in Redis with the user ID as the value
+    await redisClient.set(`sessionToken-${sessionToken}`, user.UserID, {
       EX: sessionTokenExpiry,
     });
+
+    // Add the new session token to the user's session list
+    await redisClient.rPush(userSessionsKey, sessionToken);
+    await redisClient.expire(userSessionsKey, sessionTokenExpiry);
 
     // Return the token to the user via a cookie
     res.cookie("sessionToken", sessionToken, {
@@ -94,21 +101,44 @@ router.post("/login", async (req: Request, res: Response) => {
     return res.status(200).json({ message: "Login successful!" });
   } catch (error) {
     if (error instanceof ZodError) {
-      res.status(400).json({ message: error.errors[0].message + " " + error.errors[0].path });
+      return res.status(400).json({ message: error.errors[0].message + " " + error.errors[0].path });
     }
 
-    console.log(error);
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
 router.post("/logout", async (req: Request, res: Response) => {
   try {
-    res.json({ message: "This is the logout route!" });
+    // Get the session token from the cookie
+    const sessionToken = req.cookies.sessionToken;
 
-    // Delete the token stored in redis.
-    // Return a success message.
+    if (!sessionToken) {
+      return res.status(400).json({ message: "No session token found!" });
+    }
+
+    // Check if the session token exists in Redis
+    const userId = await redisClient.get(`sessionToken-${sessionToken}`);
+
+    if (!userId) {
+      return res.status(400).json({ message: "Invalid session token!" });
+    }
+
+    // Remove token from Redis
+    await redisClient.del(`sessionToken-${sessionToken}`);
+
+    // Remove the session token from the user's session list
+    const userSessionsKey = `userSessions-${userId}`;
+    await redisClient.lRem(userSessionsKey, 1, sessionToken);
+
+    // Clear the cookie
+    res.clearCookie("sessionToken");
+
+    return res.status(200).json({ message: "Logged out successfully!" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 

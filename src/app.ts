@@ -7,6 +7,7 @@ import router from "./routes";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import { redisClient } from "../redis/client";
+import cookieParser from "cookie-parser";
 
 // Create Express server
 const app = express(); // New express instance
@@ -17,6 +18,7 @@ app.use(cors()); // Enable CORS
 app.use(helmet()); // Enable Helmet
 app.use(morgan("dev")); // Enable Morgan
 app.use(bodyParser.json()); // Enable JSON parsing
+app.use(cookieParser()); // Enable cookie parsing
 
 mongoose
   .connect("mongodb://localhost:27017/BookStore")
