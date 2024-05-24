@@ -15,6 +15,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.1",
     "@types/morgan": "^1.9.9",
+    "@types/mssql": "^9.1.5",
     "typescript": "^5.4.5"
   },
   "dependencies": {
