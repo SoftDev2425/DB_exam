@@ -6,7 +6,7 @@ import morgan from "morgan";
 import router from "./routes";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
-
+import { redisClient } from "../redis/client";
 
 // Create Express server
 const app = express(); // New express instance
@@ -25,6 +25,15 @@ mongoose
   })
   .catch((err) => {
     console.log("Error connecting to db", err);
+  });
+
+redisClient
+  .connect()
+  .then(() => {
+    console.log("Connected to Redis");
+  })
+  .catch((err) => {
+    console.log("Error connecting to Redis", err);
   });
 
 // Use routes

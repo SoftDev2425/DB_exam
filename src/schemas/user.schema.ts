@@ -24,3 +24,15 @@ export const UserSchema = z.object({
       message: "Gender must either be 'M' or 'F'.",
     }),
 });
+
+export const UserLoginSchema = z.object({
+  email: z.string().email("Invalid email address."),
+  password: z
+    .string()
+    .min(8, {
+      message: "Invalid password.",
+    })
+    .max(255, {
+      message: "Invalid password.",
+    }),
+});
