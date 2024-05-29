@@ -21,7 +21,7 @@ app.use(bodyParser.json()); // Enable JSON parsing
 app.use(cookieParser()); // Enable cookie parsing
 
 mongoose
-  .connect("mongodb://localhost:27017/BookStore")
+  .connect("mongodb://localhost:27017/bookstore")
   .then(() => {
     console.log("Connected to MongoDB");
   })

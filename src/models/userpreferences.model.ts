@@ -1,6 +1,15 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-const userPreferencesSchema: Schema = new Schema(
+export interface UserPreferencesDocument extends Document {
+  UserId: string;
+  PreferedGenres: string[];
+  PreferedAuthors: string[];
+  PreferedFormats: string[];
+  PreferedLanguages: string[];
+  WishList: string[];
+}
+
+const userPreferencesSchema: Schema = new Schema<UserPreferencesDocument>(
   {
     UserId: { type: String, required: true },
     PreferedGenres: { type: [String], required: true },

@@ -1,6 +1,28 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-const bookMetadataSchema: Schema = new Schema(
+export interface BookMetadataDocument extends Document {
+  title: string;
+  isbn: string;
+  authors: string[];
+  publishedDate: Date;
+  genres: string[];
+  format: string;
+  pageCount: number;
+  publisher: string;
+  weight: number;
+  shortDescription: string;
+  longDescription: string;
+  thumbnailUrl: string;
+  ratings: {
+    averageRating: number;
+    totalReviews: number;
+  };
+  language: string;
+  price: number;
+  stockQuantity: number;
+}
+
+const bookMetadataSchema: Schema = new Schema<BookMetadataDocument>(
   {
     title: { type: String, required: true },
     isbn: { type: String, required: true, unique: true },
@@ -20,6 +42,7 @@ const bookMetadataSchema: Schema = new Schema(
     },
     language: { type: String, required: true },
     price: { type: Number, required: true },
+    stockQuantity: { type: Number, required: true },
   },
   { timestamps: true }
 );

@@ -42,12 +42,12 @@ const scrapeAndInsertIntoDBs = async () => {
       let generatedStockQuantity = Math.floor(Math.random() * 11);
       let generatedPrice = prices[Math.floor(Math.random() * prices.length)];
 
-      await con.query`
-        BEGIN
-            INSERT INTO Books (isbn, title, StockQuantity, Price)
-            VALUES (${book.isbn}, ${book.title}, ${generatedStockQuantity}, ${generatedPrice});
-        END
-      `;
+      // await con.query`
+      //   BEGIN
+      //       INSERT INTO Books (isbn, title, StockQuantity, Price)
+      //       VALUES (${book.isbn}, ${book.title}, ${generatedStockQuantity}, ${generatedPrice});
+      //   END
+      // `;
 
       await BookMetadata.create({
         title: book.title,
@@ -58,7 +58,6 @@ const scrapeAndInsertIntoDBs = async () => {
         format: book.format,
         pageCount: book.pageCount,
         publisher: book.publisher_name,
-        weight: book.book_weight,
         shortDescription: book.shortDescription,
         longDescription: book.longDescription,
         thumbnailUrl: book.thumbnailUrl,
@@ -67,7 +66,9 @@ const scrapeAndInsertIntoDBs = async () => {
           totalReviews: book.Ratings.TotalReviews,
         },
         language: book.language,
+        weight: book.format !== "eBook" && book.format !== "Audiobook" ? book.book_weight : null,
         price: generatedPrice,
+        stockQuantity: generatedStockQuantity,
       });
     }
 

@@ -5,6 +5,7 @@ import sql from "mssql";
 import { mssqlConfig } from "../utils/mssqlConnection";
 import bcrypt from "bcrypt";
 import { redisClient } from "../../redis/client";
+import UserPreferences from "../models/userpreferences.model";
 
 // New Router instance
 const router = Router();
@@ -28,10 +29,22 @@ router.post("/register", async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
     // Save our user in the database.
-    await con.query`
-        INSERT INTO Users (FirstName, LastName, Email, PasswordHash, DateOfBirth, Gender)
-        VALUES (${req.body.firstName}, ${req.body.lastName}, ${req.body.email}, ${hashedPassword}, ${req.body.dateOfBirth}, ${req.body.gender})
+    const createdUser = await con.query`
+      INSERT INTO Users (FirstName, LastName, Email, PasswordHash, DateOfBirth, Gender)
+      OUTPUT INSERTED.UserId
+      VALUES (${req.body.firstName}, ${req.body.lastName}, ${req.body.email}, ${hashedPassword}, ${req.body.dateOfBirth}, ${req.body.gender});
     `;
+
+    const userId = createdUser.recordset[0].UserId;
+
+    UserPreferences.create({
+      UserId: userId,
+      PreferedGenres: [],
+      PreferedAuthors: [],
+      PreferedFormats: [],
+      PreferedLanguages: [],
+      WishList: [],
+    });
 
     await con.close();
     res.status(201).json({ message: "User created successfully!" });
@@ -41,8 +54,8 @@ router.post("/register", async (req: Request, res: Response) => {
         message: error.errors[0].message + " " + error.errors[0].path,
       });
     }
-
     console.log(error);
+    res.status(500).json({ message: "Internal server error", error });
   }
 });
 
