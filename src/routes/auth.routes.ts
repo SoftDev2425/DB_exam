@@ -18,24 +18,31 @@ router.post("/register", async (req: Request, res: Response) => {
 
     // Check if email exists. (400 if error)
     const con = await sql.connect(mssqlConfig);
-    const result = await con.query`SELECT * FROM Users WHERE email = ${req.body.email}`;
+    // const result = await con.query`SELECT * FROM Users WHERE email = ${req.body.email}`;
 
-    if (result.recordset.length > 0) {
-      res.status(400).json({ message: "User with email already exists!" });
-    }
+    // if (result.recordset.length > 0) {
+    //   res.status(400).json({ message: "User with email already exists!" });
+    // }
 
     // Salt and then hash the password.
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
     // Save our user in the database.
-    const createdUser = await con.query`
-      INSERT INTO Users (FirstName, LastName, Email, PasswordHash, DateOfBirth, Gender)
-      OUTPUT INSERTED.UserId
-      VALUES (${req.body.firstName}, ${req.body.lastName}, ${req.body.email}, ${hashedPassword}, ${req.body.dateOfBirth}, ${req.body.gender});
+    const result = await con.query`
+    IF NOT EXISTS (SELECT * FROM Users WHERE email = ${req.body.email})  
+    BEGIN
+        INSERT INTO Users (FirstName, LastName, Email, PasswordHash, DateOfBirth, Gender)
+        OUTPUT INSERTED.UserId
+        VALUES (${req.body.firstName}, ${req.body.lastName}, ${req.body.email}, ${hashedPassword}, ${req.body.dateOfBirth}, ${req.body.gender});
+    END
+    ELSE
+    BEGIN
+        THROW 50000, 'User with email already exists!', 1;
+    END
     `;
 
-    const userId = createdUser.recordset[0].UserId;
+    const userId = result.recordset[0].UserId;
 
     UserPreferences.create({
       UserId: userId,
@@ -49,12 +56,17 @@ router.post("/register", async (req: Request, res: Response) => {
     await con.close();
     res.status(201).json({ message: "User created successfully!" });
   } catch (error) {
+    console.log(error);
+
     if (error instanceof ZodError) {
       res.status(400).json({
         message: error.errors[0].message + " " + error.errors[0].path,
       });
     }
-    console.log(error);
+    if (error.number === 50000) {
+      return res.status(400).json({ message: error.message });
+    }
+
     res.status(500).json({ message: "Internal server error", error });
   }
 });
