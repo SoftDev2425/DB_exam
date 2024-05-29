@@ -104,7 +104,7 @@ booksRouter.get("/search", async (req: Request, res: Response) => {
 });
 
 // get book by isbn route
-booksRouter.get("/:isbn", async (req: Request, res: Response) => {
+booksRouter.get("/isbn/:isbn", async (req: Request, res: Response) => {
   try {
     const isbn = req.params.isbn;
 
@@ -116,6 +116,78 @@ booksRouter.get("/:isbn", async (req: Request, res: Response) => {
     }
 
     res.status(200).json(book);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+// get unique genres route
+booksRouter.get("/genres", async (req: Request, res: Response) => {
+  try {
+    // get unique genres
+    // const genres = await BookMetadata.distinct("genres");
+    const genres = await BookMetadata.aggregate([
+      {
+        $unwind: "$genres", // Unwind the genres array
+      },
+      {
+        $group: {
+          _id: null, // Group all documents into a single group
+          genres: { $addToSet: "$genres" }, // Add genres to a set to ensure uniqueness
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Exclude the default _id field
+          genres: 1, // Include the genres field
+        },
+      },
+    ]);
+
+    // Extract genres array from the result
+    const genreArray = genres.length > 0 ? genres[0].genres : [];
+
+    res.status(200).json(genreArray);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+// get unique languages route
+booksRouter.get("/languages", async (req: Request, res: Response) => {
+  try {
+    // get unique languages
+    const languages = await BookMetadata.distinct("language");
+
+    res.status(200).json(languages);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+// get unique formats route
+booksRouter.get("/formats", async (req: Request, res: Response) => {
+  try {
+    // get unique formats
+    const formats = await BookMetadata.distinct("format");
+
+    res.status(200).json(formats);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+// get unique authors route
+booksRouter.get("/authors", async (req: Request, res: Response) => {
+  try {
+    // get unique authors
+    const authors = await BookMetadata.distinct("authors");
+
+    res.status(200).json(authors);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal server error", error });
