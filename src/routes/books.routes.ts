@@ -3,6 +3,7 @@ import sql from "mssql";
 import { mssqlConfig } from "../utils/mssqlConnection";
 import BookMetadata from "../models/bookmetdata.model";
 import { redisClient } from "../../redis/client";
+import { CustomRequest } from "../ICustomRequest";
 
 const booksRouter = Router();
 
@@ -108,12 +109,24 @@ booksRouter.get("/isbn/:isbn", async (req: Request, res: Response) => {
   try {
     const isbn = req.params.isbn;
 
+    // check if isbn is in cache
+    const cachedBook = await redisClient.get(`book-isbn-${isbn}`);
+
+    if (cachedBook) {
+      return res.status(200).json(JSON.parse(cachedBook));
+    }
+
     // get book by isbn
     const book = await BookMetadata.findOne({ isbn: isbn });
 
     if (!book) {
       return res.status(404).json({ message: "Book not found!" });
     }
+
+    // cache book in redis
+    await redisClient.set(`book-isbn-${isbn}`, JSON.stringify(book), {
+      EX: 60,
+    });
 
     res.status(200).json(book);
   } catch (error) {
@@ -188,6 +201,93 @@ booksRouter.get("/authors", async (req: Request, res: Response) => {
     const authors = await BookMetadata.distinct("authors");
 
     res.status(200).json(authors);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+// create book review
+booksRouter.post("/isbn/:isbn/reviews", async (req: CustomRequest, res: Response) => {
+  try {
+    const isbn = req.params.isbn;
+    const userId = req.userId;
+    const { rating, comment } = req.body;
+
+    // validate rating
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Rating must be between 1 and 5!" });
+    }
+
+    // create book review
+    const con = await sql.connect(mssqlConfig);
+
+    const result = await con.query`
+      BEGIN
+      IF EXISTS (SELECT * FROM Books WHERE isbn = ${isbn})
+      BEGIN
+        IF NOT EXISTS (SELECT * FROM reviews WHERE userId = ${userId} AND isbn = ${isbn})
+        BEGIN
+          INSERT INTO reviews (userId, isbn, rating, comment)
+          VALUES (${userId}, ${isbn}, ${rating}, ${comment})
+        END
+        ELSE 
+        BEGIN
+          THROW 51000, 'You have already reviewed this book!', 1
+        END
+      END
+      ELSE
+      BEGIN
+        THROW 51000, 'Book not found!', 1
+      END
+    END
+    `;
+
+    res.status(201).json({ message: "Review created successfully!" });
+  } catch (error) {
+    if (error.number === 51000) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    console.log(error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+// get book reviews
+booksRouter.get("/:isbn/reviews", async (req: Request, res: Response) => {
+  try {
+    const isbn = req.params.isbn;
+
+    // check if isbn is in cache
+    const cachedReviews = await redisClient.get(`book-reviews-isbn-${isbn}`);
+
+    if (cachedReviews) {
+      return res.status(200).json(JSON.parse(cachedReviews));
+    }
+
+    // get book reviews
+    const con = await sql.connect(mssqlConfig);
+
+    const result = await con.query`
+      SELECT reviews.ReviewID, FirstName, LastName, Rating, Comment, reviews.CreatedAt
+      FROM reviews
+      JOIN users ON reviews.UserID = users.UserID
+      WHERE isbn = ${isbn}
+    `;
+
+    const reviews = result.recordset;
+
+    if (reviews.length === 0) {
+      return res.status(404).json({ message: "No reviews found!" });
+    }
+
+    // cache reviews in redis
+    await redisClient.set(`book-reviews-isbn-${isbn}`, JSON.stringify(reviews), {
+      EX: 60,
+    });
+
+    res.status(200).json(reviews);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal server error", error });
