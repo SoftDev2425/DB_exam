@@ -6,6 +6,7 @@ import { mssqlConfig } from "../utils/mssqlConnection";
 import bcrypt from "bcrypt";
 import { redisClient } from "../../redis/client";
 import UserPreferences from "../models/userpreferences.model";
+import { v4 as uuidv4 } from "uuid";
 
 // New Router instance
 const router = Router();
@@ -104,7 +105,7 @@ router.post("/login", async (req: Request, res: Response) => {
     }
 
     // Generate a new session token
-    const sessionToken = crypto.randomUUID();
+    const sessionToken = uuidv4();
     const sessionTokenExpiry = req.body.rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 days if rememberMe is true, else 1 day
 
     // Store the session token in Redis with the user ID as the value
