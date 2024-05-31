@@ -35,7 +35,9 @@ router.post("/register", async (req: Request, res: Response) => {
     BEGIN
         INSERT INTO Users (FirstName, LastName, Email, PasswordHash, DateOfBirth, Gender)
         OUTPUT INSERTED.UserId
-        VALUES (${req.body.firstName}, ${req.body.lastName}, ${req.body.email}, ${hashedPassword}, ${req.body.dateOfBirth}, ${req.body.gender});
+        VALUES (${req.body.firstName.trim()}, ${req.body.lastName.trim()}, ${req.body.email}, ${hashedPassword}, ${
+      req.body.dateOfBirth
+    }, ${req.body.gender});
     END
     ELSE
     BEGIN
