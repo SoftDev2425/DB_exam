@@ -4,6 +4,7 @@ import { mssqlConfig } from "../utils/mssqlConnection";
 import sql from "mssql";
 import UserPreferences from "../models/userpreferences.model";
 import BookMetadata from "../models/bookmetdata.model";
+import { redisClient } from "../../redis/client";
 
 // New Router instance
 const router = Router();
@@ -96,6 +97,51 @@ router.put("/preferences", async (req: CustomRequest, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+router.get("/delete", async (req: Request, res: Response) => {
+  try {
+    const sessionToken = req.cookies.sessionToken;
+    
+    if (!sessionToken) {
+      return res.status(400).json({ message: "No session token found!" });
+    }
+
+    // Check if the session token exists in Redis
+    const userId = await redisClient.get(`sessionToken-${sessionToken}`);
+
+    if (!userId) {
+      return res.status(400).json({ message: "Invalid session token!" });
+    }
+
+    console.log(userId);
+    
+
+    const con = await sql.connect(mssqlConfig);
+
+    // Call stored procedure to anonymize the user
+    await con.request()
+      .input("UserID", sql.UniqueIdentifier, userId)
+      .execute("AnonymizeUser");
+
+    await con.close();
+    
+    // Remove token from Redis
+    await redisClient.del(`sessionToken-${sessionToken}`);
+
+    // Remove the session token from the user's session list
+    const userSessionsKey = `userSessions-${userId}`;
+    await redisClient.lRem(userSessionsKey, 1, sessionToken);
+
+    // Clear the cookie
+    res.clearCookie("sessionToken");
+    
+    return res.status(200).json({ message: "User anonymized successfully!" });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
