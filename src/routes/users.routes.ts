@@ -100,7 +100,7 @@ router.put("/preferences", async (req: CustomRequest, res: Response) => {
   }
 });
 
-router.get("/delete", async (req: Request, res: Response) => {
+router.delete("/delete", async (req: Request, res: Response) => {
   try {
     const sessionToken = req.cookies.sessionToken;
     
@@ -137,7 +137,7 @@ router.get("/delete", async (req: Request, res: Response) => {
     // Clear the cookie
     res.clearCookie("sessionToken");
     
-    return res.status(200).json({ message: "User anonymized successfully!" });
+    return res.status(200).json({ message: "User deleted successfully!" });
 
   } catch (error) {
     console.error(error);
