@@ -4,6 +4,7 @@ import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Register from "./pages/Register";
+import Book from "./pages/Book";
 
 type Props = {};
 
@@ -17,12 +18,12 @@ const PrivateRoutes = () => {
 
 const Routes = () => {
   return (
-    
     <Router>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route element={<PrivateRoutes />}>
         <Route path="/" element={<Home />} />
+        <Route path="/book/:id" element={<Book />} />
       </Route>
     </Router>
   );

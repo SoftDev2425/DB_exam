@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthContext } from "@/context/AuthContext";
+import axios from "axios";
 import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 // import { useAuth } from "@/AuthContext";
@@ -12,8 +13,22 @@ const Login: React.FC = () => {
 
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    // login(email, password);
+  const handleLogin = async () => {
+    const res = await axios.post(
+      "http://localhost:3000/api/auth/login",
+      {
+        email: email,
+        password: password,
+      },
+      { withCredentials: true }
+    );
+
+    console.log(res);
+
+    if (res.status !== 200) {
+      return;
+    }
+
     setAuthenticated(true);
     navigate("/");
   };

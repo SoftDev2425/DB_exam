@@ -1,20 +1,15 @@
 import { Input } from "@/components/ui/input";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "@/context/AuthContext";
+import axios from "axios";
 
 const Register: React.FC = () => {
-  // const { register } = useAuth();
+  const { setAuthenticated } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,15 +17,21 @@ const Register: React.FC = () => {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("");
 
-  const handleRegister = () => {
-    // register({
-    //   firstName,
-    //   lastName,
-    //   email,
-    //   password,
-    //   dateOfBirth,
-    //   gender,
-    // });
+  const handleRegister = async () => {
+    const res = await axios.post("http://localhost:5000/api/auth/register", {
+      firstName,
+      lastName,
+      email,
+      password,
+      dateOfBirth,
+      gender,
+    });
+
+    if (res.status === 201) {
+      setAuthenticated(true);
+    }
+
+    navigate("/login");
   };
 
   return (
