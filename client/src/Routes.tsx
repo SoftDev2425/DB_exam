@@ -5,6 +5,9 @@ import { AuthContext } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Register from "./pages/Register";
 import Book from "./pages/Book";
+import Orders from "./pages/Orders";
+import Order from "./pages/Order";
+import Profile from "./pages/Profile";
 
 type Props = {};
 
@@ -24,6 +27,10 @@ const Routes = () => {
       <Route element={<PrivateRoutes />}>
         <Route path="/" element={<Home />} />
         <Route path="/book/:id" element={<Book />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/orders/:id" element={<Order />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Route>
     </Router>
   );

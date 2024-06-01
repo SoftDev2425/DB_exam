@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import axios from "axios";
 import { useToast } from "./ui/use-toast";
+import { Bookmark } from "lucide-react";
 
 interface BookProps {
   book: {
@@ -50,9 +51,35 @@ const Book = ({ book }: BookProps) => {
     });
   };
 
+  const handleAddToWishList = async () => {
+    const response = await axios.post(
+      `http://localhost:3000/books/${book.isbn}/wishlist`,
+      {},
+      { withCredentials: true }
+    );
+
+    if (response.status !== 201) {
+      console.log("Error adding book to wishlist");
+      return;
+    }
+
+    toast({
+      title: "Book added to wishlist",
+      description: `${book.title} has been added to your wishlist`,
+    });
+  };
+
   return (
     <div className="bg-white rounded-md overflow-hidden shadow-md hover:shadow-lg flex flex-col hover:scale-105 duration-100 ease-in-out">
-      <img src={book.thumbnailUrl} alt={book.title} className="w-full h-48 object-cover" />
+      <div className="relative">
+        <img src={book.thumbnailUrl} alt={book.title} className="w-full h-48 object-cover" />
+        <div
+          className="absolute right-1 bottom-1 cursor-pointer hover:scale-110 duration-100 ease-in-out bg-white bg-opacity-60 rounded-full p-1"
+          onClick={handleAddToWishList}
+        >
+          <Bookmark size={18} />
+        </div>
+      </div>
       <div className="p-4">
         <h2 className="text-lg font-semibold mb-2">{book.title}</h2>
         <p className="text-gray-700 mb-2">{book.shortDescription}</p>
@@ -78,7 +105,7 @@ const Book = ({ book }: BookProps) => {
         </div>
 
         <div className="mt-4 flex-1">
-          <Button className="mr-2" onClick={() => navigate(`/book/${book._id}`)}>
+          <Button className="mr-2" onClick={() => navigate(`/book/${book.isbn}`)}>
             Details
           </Button>
           <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleAddToCart}>

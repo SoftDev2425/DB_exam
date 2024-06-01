@@ -79,6 +79,30 @@ const BasketContent = () => {
     setRefetch(!refetch);
   };
 
+  const handleCreateOrder = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/orders",
+        {
+          shippingAddress: "",
+          shippingCity: "",
+        },
+        { withCredentials: true }
+      );
+      if (response.status === 201) {
+        toast({
+          title: "Order created",
+          description: "Your order has been created.",
+        });
+        setBasketData({ msg: "Basket cleared", basket: { books: [] } });
+      } else {
+        console.log("Error creating order");
+      }
+    } catch (error) {
+      console.log("Error creating order", error);
+    }
+  };
+
   return (
     <SheetHeader>
       <SheetTitle>Basket</SheetTitle>
@@ -125,7 +149,9 @@ const BasketContent = () => {
           <Button className="p-2 rounded-md mt-4 w-full" variant={"secondary"} onClick={handleClearBasket}>
             Clear basket
           </Button>
-          <Button className="p-2 rounded-md mt-4 w-full">Checkout</Button>
+          <Button className="p-2 rounded-md mt-4 w-full" onClick={handleCreateOrder}>
+            Checkout
+          </Button>
         </div>
       </SheetDescription>
     </SheetHeader>

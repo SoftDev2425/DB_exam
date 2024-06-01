@@ -10,6 +10,11 @@ const Home = () => {
           <Search />
         </div>
 
+        {/* Recommended books */}
+        <div>
+          <h2 className="text-xl">Recommended books</h2>
+        </div>
+
         {/* TOP books */}
         <div>
           <h2 className="text-xl">Popular books</h2>

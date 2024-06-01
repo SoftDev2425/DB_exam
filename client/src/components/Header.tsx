@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import axios from "axios";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { ShoppingBasketIcon } from "lucide-react";
+import { LogOut, ShoppingBasketIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import BasketContent from "./BasketContent";
 
@@ -28,14 +28,28 @@ const Header = () => {
 
   return (
     <div className="flex items-center bg-primary text-white text-center px-8 w-full h-[80px] bg-indigo-400 justify-between">
-      <h1 className="text-3xl font-bold hover:scale-105 duration-100 ease-in-out cursor-default">EcoBooks</h1>
+      <h1
+        className="text-3xl font-bold hover:scale-110 duration-100 ease-in-out cursor-pointer"
+        onClick={() => navigate("/")}
+      >
+        EcoBooks
+      </h1>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        {/* order history */}
+        <Button variant="ghost" className="mr-2" onClick={() => navigate("/orders")}>
+          Orders
+        </Button>
+
+        {/* User preferences */}
+        <Button variant="ghost" className="mr-2" onClick={() => navigate("/profile")}>
+          Profile
+        </Button>
+
         <Sheet>
           <SheetTrigger>
             <Button variant="ghost" className="mr-2">
-              <ShoppingBasketIcon size={24} />
-              Basket
+              <ShoppingBasketIcon size={30} />
             </Button>
           </SheetTrigger>
           <SheetContent>
@@ -43,8 +57,8 @@ const Header = () => {
           </SheetContent>
         </Sheet>
 
-        <Button variant="secondary" className="mr-2" onClick={handleLogout}>
-          Logout
+        <Button variant="ghost" className="mr-2" onClick={handleLogout}>
+          <LogOut size={24} />
         </Button>
       </div>
     </div>
