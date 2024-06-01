@@ -18,13 +18,13 @@ basketRoutes.post("/add", async (req: CustomRequest, res: Response) => {
     }
 
     // Validate isbn and quantity
-    // const isbnRegex = /^\d{9}-\d{1}$/;
-    // if (!isbnRegex.test(isbn)) {
-    //   return res.status(400).json({ message: "Invalid ISBN" });
-    // }
+    const isbnRegex = /^\d{9}-[0-9X]$/;
+    if (!isbnRegex.test(isbn)) {
+      return res.status(400).json({ message: "Invalid ISBN" });
+    }
 
-    if (typeof quantity !== "number") {
-      return res.status(400).json({ message: "Quantity must be a number" });
+    if (typeof quantity !== "number" || quantity < 0) {
+      return res.status(400).json({ message: "Quantity must be a valid number" });
     }
 
     // Fetch book metadata
@@ -122,9 +122,12 @@ basketRoutes.get("/get", async (req: CustomRequest, res: Response) => {
         }
       }
     }
-    await redisClient.set(`basket-${userId}`, JSON.stringify(basket));
-    await con.close();
+    
+    await redisClient.set(`basket-${userId}`, JSON.stringify(basket), {
+      EX: 60 * 60 * 24 * 7,
+    });
 
+    await con.close();
     return res.status(200).json(basket);
   } catch (error) {
     console.error(error);
