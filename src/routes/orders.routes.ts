@@ -63,7 +63,7 @@ orderRoutes.post("/", async (req: CustomRequest, res: Response) => {
   }
 });
 
-orderRoutes.get("/", async (req: Request, res: Response) => {
+orderRoutes.get("/", async (req: CustomRequest, res: Response) => {
   try {
     const userId = req.userId;
 
