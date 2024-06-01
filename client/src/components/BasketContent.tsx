@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/use-toast";
 import { Input } from "./ui/input";
+import { Minus, Plus } from "lucide-react";
 
 interface Book {
   isbn: string;
@@ -29,6 +30,7 @@ interface BasketContentProps {
 
 const BasketContent = () => {
   const [basketData, setBasketData] = useState<BasketContentProps | null>(null);
+  const [refetch, setRefetch] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -50,7 +52,7 @@ const BasketContent = () => {
     };
 
     fetchData();
-  }, [toast]);
+  }, [toast, refetch]);
 
   const handleClearBasket = async () => {
     const confirmation = window.confirm("Are you sure you want to clear your basket?");
@@ -69,6 +71,14 @@ const BasketContent = () => {
     }
   };
 
+  const handleChangeBookCount = async (newCount: number, isbn: string) => {
+    console.log("newCount", newCount);
+    console.log("isbn", isbn);
+    await axios.post("http://localhost:3000/basket/add", { isbn, quantity: newCount }, { withCredentials: true });
+
+    setRefetch(!refetch);
+  };
+
   return (
     <SheetHeader>
       <SheetTitle>Basket</SheetTitle>
@@ -84,8 +94,21 @@ const BasketContent = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Input type="number" placeholder="count" className="w-16" value={book.quantity} />
-                <p>x {book.price} kr</p>
+                <div
+                  className="hover:scale-125 duration-100 ease-in-out cursor-pointer"
+                  onClick={() => handleChangeBookCount(book.quantity - 1, book.isbn)}
+                >
+                  <Minus size={16} />
+                </div>
+                <p>
+                  {book.quantity} x {book.price} kr
+                </p>
+                <div
+                  className="hover:scale-125 duration-100 ease-in-out cursor-pointer"
+                  onClick={() => handleChangeBookCount(book.quantity + 1, book.isbn)}
+                >
+                  <Plus size={16} />
+                </div>
               </div>
             </div>
           ))

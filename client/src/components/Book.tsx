@@ -61,7 +61,7 @@ const Book = ({ book }: BookProps) => {
             <span className="font-semibold">Authors:</span> {book.authors.join(", ")}
           </p>
           <p className="text-sm text-gray-500">
-            <span className="font-semibold">Published Date:</span> {book.publishedDate}
+            <span className="font-semibold">Published Date:</span> {new Date(book.publishedDate).toLocaleDateString()}
           </p>
           <p>
             <span className="font-semibold">Price:</span> {book.price} kr.

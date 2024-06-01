@@ -12,6 +12,12 @@ const Header = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    const confirmation = window.confirm("Are you sure you want to logout?");
+
+    if (!confirmation) {
+      return;
+    }
+
     const res = await axios.post("http://localhost:3000/api/auth/logout", {}, { withCredentials: true });
 
     if (res.status === 200) {
@@ -21,10 +27,10 @@ const Header = () => {
   };
 
   return (
-    <div className="flex items-center bg-primary text-white text-center p-3 w-full h-[80px] bg-indigo-400 justify-between">
+    <div className="flex items-center bg-primary text-white text-center px-8 w-full h-[80px] bg-indigo-400 justify-between">
       <h1 className="text-3xl font-bold hover:scale-105 duration-100 ease-in-out cursor-default">EcoBooks</h1>
 
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         <Sheet>
           <SheetTrigger>
             <Button variant="ghost" className="mr-2">
