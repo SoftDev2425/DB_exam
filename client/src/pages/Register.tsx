@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Register: React.FC = () => {
   // const { register } = useAuth();
@@ -33,78 +34,95 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col w-full mx-auto items-center justify-center">
-      <div className="grid w-full max-w-sm items-center gap-1.5">
-        <Label htmlFor="firstName">Firstname</Label>
-        <Input
-          className="p-2"
-          placeholder="Enter firstname"
-          id="firstName"
-          type="text"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-        />
+    <div className="flex flex-col items-center justify-center w-full h-screen bg-gradient-to-r from-blue-500 to-purple-500">
+      <div className="bg-white rounded-lg shadow-lg p-8 space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="firstName">First Name</Label>
+            <Input
+              id="firstName"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Enter First Name"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Enter Last Name"
+              className="w-full"
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="text"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter Email"
+            className="w-full"
+          />
+        </div>
+        <div>
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter Password"
+            className="w-full"
+          />
+        </div>
+        <div>
+          <Label htmlFor="dateOfBirth">Date of Birth</Label>
+          <Input
+            id="dateOfBirth"
+            type="date"
+            value={dateOfBirth}
+            onChange={(e) => setDateOfBirth(e.target.value)}
+            placeholder="Select Date of Birth"
+            className="w-full"
+          />
+        </div>
+        <div>
+          <Label htmlFor="gender">Gender</Label>
+          <Select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem onClick={() => setGender("M")} value="Male">
+                  Male
+                </SelectItem>
+                <SelectItem onClick={() => setGender("F")} value="Female">
+                  Female
+                </SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={handleRegister} className="w-full">
+          Register
+        </Button>
+        <div className="text-center">
+          <p className="text-sm">
+            Already have an account?{" "}
+            <Link to="/login" className="text-blue-500">
+              Login here
+            </Link>
+          </p>
+        </div>
       </div>
-      <div className="grid w-full max-w-sm items-center gap-1.5">
-        <Label htmlFor="lastName">Lastname</Label>
-        <Input
-          className="p-2"
-          id="lastName"
-          placeholder="Enter lastname"
-          type="text"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-        />
-      </div>
-      <div className="grid w-full max-w-sm items-center gap-1.5">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          className="p-2"
-          id="email"
-          placeholder="Enter email"
-          type="text"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-      <div className="grid w-full max-w-sm items-center gap-1.5">
-        <Label htmlFor="email">Password</Label>
-        <Input
-          className="p-2"
-          id="password"
-          placeholder="Enter password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-      <div className="grid w-full max-w-sm items-center gap-1.5">
-        <Label htmlFor="dateOfBirth">Date of birth</Label>
-        <Input
-          className="p-2"
-          id="dateOfBirth"
-          placeholder="Select date of birth"
-          type="date"
-          value={dateOfBirth}
-          onChange={(e) => setDateOfBirth(e.target.value)}
-        />
-      </div>
-      <div className="grid w-full max-w-sm items-center gap-1.5">
-        <Label htmlFor="dateOfBirth">Gender</Label>
-
-        <Select>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Gender" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="M">Male</SelectItem>
-              <SelectItem value="F">Female</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-      <Button onClick={handleRegister}>Register</Button>
     </div>
   );
 };

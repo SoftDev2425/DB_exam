@@ -17,6 +17,7 @@ const PrivateRoutes = () => {
 
 const Routes = () => {
   return (
+    
     <Router>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
