@@ -5,6 +5,7 @@ import BookMetadata from "../models/bookmetdata.model";
 import { redisClient } from "../../redis/client";
 import { CustomRequest } from "../ICustomRequest";
 import UserPreferences from "../models/userpreferences.model";
+import { pipeline } from "zod";
 
 const booksRouter = Router();
 
@@ -16,10 +17,13 @@ booksRouter.get("/search", async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 32;
 
     // check if searchTerm is provided
-    if (!searchTerm) return res.status(400).json({ message: "Search term is required!" });
+    if (!searchTerm)
+      return res.status(400).json({ message: "Search term is required!" });
 
     // check if searchTerm is in cache
-    const cachedResult = await redisClient.get(`search-${searchTerm}-page-${page}-limit-${limit}`);
+    const cachedResult = await redisClient.get(
+      `search-${searchTerm}-page-${page}-limit-${limit}`
+    );
 
     if (cachedResult) {
       const { total, data } = JSON.parse(cachedResult);
@@ -79,7 +83,8 @@ booksRouter.get("/search", async (req: Request, res: Response) => {
 
     const { total, books: data } = result[0];
 
-    if (data.length === 0) return res.status(404).json({ message: "No books found!" });
+    if (data.length === 0)
+      return res.status(404).json({ message: "No books found!" });
 
     // cache result in redis
     await redisClient.set(
@@ -209,21 +214,25 @@ booksRouter.get("/authors", async (req: Request, res: Response) => {
 });
 
 // create book review
-booksRouter.post("/isbn/:isbn/reviews", async (req: CustomRequest, res: Response) => {
-  try {
-    const isbn = req.params.isbn;
-    const userId = req.userId;
-    const { rating, comment } = req.body;
+booksRouter.post(
+  "/isbn/:isbn/reviews",
+  async (req: CustomRequest, res: Response) => {
+    try {
+      const isbn = req.params.isbn;
+      const userId = req.userId;
+      const { rating, comment } = req.body;
 
-    // validate rating
-    if (rating < 1 || rating > 5) {
-      return res.status(400).json({ message: "Rating must be between 1 and 5!" });
-    }
+      // validate rating
+      if (rating < 1 || rating > 5) {
+        return res
+          .status(400)
+          .json({ message: "Rating must be between 1 and 5!" });
+      }
 
-    // create book review
-    const con = await sql.connect(mssqlConfig);
+      // create book review
+      const con = await sql.connect(mssqlConfig);
 
-    const result = await con.query`
+      const result = await con.query`
       BEGIN
       IF EXISTS (SELECT * FROM Books WHERE isbn = ${isbn})
       BEGIN
@@ -244,39 +253,41 @@ booksRouter.post("/isbn/:isbn/reviews", async (req: CustomRequest, res: Response
     END
     `;
 
-    const book: any = await BookMetadata.findOne({ isbn });
+      const book: any = await BookMetadata.findOne({ isbn });
 
-    const totalReviews = book.ratings.totalReviews;
-    const averageRating = book.ratings.averageRating;
+      const totalReviews = book.ratings.totalReviews;
+      const averageRating = book.ratings.averageRating;
 
-    const newAverageRating = (averageRating * totalReviews + rating) / (totalReviews + 1);
+      const newAverageRating =
+        (averageRating * totalReviews + rating) / (totalReviews + 1);
 
-    const updatedBook = await BookMetadata.findOneAndUpdate(
-      { isbn },
-      {
-        $set: {
-          ratings: {
-            totalReviews: totalReviews + 1,
-            averageRating: newAverageRating.toFixed(2),
+      const updatedBook = await BookMetadata.findOneAndUpdate(
+        { isbn },
+        {
+          $set: {
+            ratings: {
+              totalReviews: totalReviews + 1,
+              averageRating: newAverageRating.toFixed(2),
+            },
           },
         },
-      },
-      {
-        new: true,
+        {
+          new: true,
+        }
+      );
+
+      await con.close();
+      res.status(201).json(updatedBook);
+    } catch (error) {
+      if (error.number === 51000) {
+        return res.status(400).json({ message: error.message });
       }
-    );
 
-    await con.close();
-    res.status(201).json(updatedBook);
-  } catch (error) {
-    if (error.number === 51000) {
-      return res.status(400).json({ message: error.message });
+      console.log(error);
+      res.status(500).json({ message: "Internal server error", error });
     }
-
-    console.log(error);
-    res.status(500).json({ message: "Internal server error", error });
   }
-});
+);
 
 // get book reviews
 booksRouter.get("/:isbn/reviews", async (req: Request, res: Response) => {
@@ -307,9 +318,13 @@ booksRouter.get("/:isbn/reviews", async (req: Request, res: Response) => {
     }
 
     // cache reviews in redis
-    await redisClient.set(`book-reviews-isbn-${isbn}`, JSON.stringify(reviews), {
-      EX: 60,
-    });
+    await redisClient.set(
+      `book-reviews-isbn-${isbn}`,
+      JSON.stringify(reviews),
+      {
+        EX: 60,
+      }
+    );
 
     res.status(200).json(reviews);
   } catch (error) {
@@ -319,67 +334,221 @@ booksRouter.get("/:isbn/reviews", async (req: Request, res: Response) => {
 });
 
 // add book to wishlist
-booksRouter.post("/:isbn/wishlist", async (req: CustomRequest, res: Response) => {
+booksRouter.post(
+  "/:isbn/wishlist",
+  async (req: CustomRequest, res: Response) => {
+    try {
+      const isbn = req.params.isbn;
+      const userId = req.userId;
+
+      const isbnExists = await BookMetadata.exists({ isbn });
+
+      if (!isbnExists) {
+        return res.status(404).json({ message: "Book not found!" });
+      }
+
+      const userPreferences = await UserPreferences.findOneAndUpdate(
+        { UserId: userId },
+        { $addToSet: { WishList: isbn } },
+        { upsert: true, new: true }
+      );
+
+      if (!userPreferences) {
+        return res.status(404).json({ message: "User preferences not found!" });
+      }
+
+      res.status(201).json(userPreferences);
+    } catch (error) {
+      if (error.number === 52000) {
+        return res.status(400).json({ message: error.message });
+      }
+
+      console.log(error);
+      res.status(500).json({ message: "Internal server error", error });
+    }
+  }
+);
+
+// remove book from wishlist
+booksRouter.delete(
+  "/:isbn/wishlist",
+  async (req: CustomRequest, res: Response) => {
+    try {
+      const isbn = req.params.isbn;
+      const userId = req.userId;
+
+      const isbnExists = await BookMetadata.exists({ isbn });
+
+      if (!isbnExists) {
+        return res.status(404).json({ message: "Book not found!" });
+      }
+
+      const userPreferences = await UserPreferences.findOneAndUpdate(
+        { UserId: userId },
+        { $pull: { WishList: isbn } },
+        { new: true }
+      );
+
+      if (!userPreferences) {
+        return res.status(404).json({ message: "User preferences not found!" });
+      }
+
+      res.status(200).json(userPreferences);
+    } catch (error) {
+      if (error.number === 52000) {
+        return res.status(400).json({ message: error.message });
+      }
+
+      console.log(error);
+      res.status(500).json({ message: "Internal server error", error });
+    }
+  }
+);
+
+// top 10 rated books
+booksRouter.get("/top-rated", async (req: Request, res: Response) => {
   try {
-    const isbn = req.params.isbn;
-    const userId = req.userId;
+    const cachedTopRated = await redisClient.get("top-rated-books");
 
-    const isbnExists = await BookMetadata.exists({ isbn });
-
-    if (!isbnExists) {
-      return res.status(404).json({ message: "Book not found!" });
+    if (cachedTopRated) {
+      return res.status(200).json(JSON.parse(cachedTopRated));
     }
 
-    const userPreferences = await UserPreferences.findOneAndUpdate(
-      { UserId: userId },
-      { $addToSet: { WishList: isbn } },
-      { upsert: true, new: true }
-    );
+    const result = await BookMetadata.aggregate([
+      {
+        $sort: { "ratings.averageRating": -1 },
+      },
+      {
+        $limit: 10,
+      },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          isbn: 1,
+          authors: 1,
+          publishedDate: 1,
+          genres: 1,
+          format: 1,
+          pageCount: 1,
+          publisher: 1,
+          weight: 1,
+          shortDescription: 1,
+          longDescription: 1,
+          thumbnailUrl: 1,
+          "ratings.averageRating": 1,
+          "ratings.totalReviews": 1,
+          language: 1,
+          price: 1,
+          stockQuantity: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+    ]);
 
-    if (!userPreferences) {
-      return res.status(404).json({ message: "User preferences not found!" });
-    }
-
-    res.status(201).json(userPreferences);
+    await redisClient.set("top-rated-books", JSON.stringify(result), {
+      EX: 60,
+    });
+    res.status(200).json(result);
   } catch (error) {
-    if (error.number === 52000) {
-      return res.status(400).json({ message: error.message });
-    }
-
-    console.log(error);
+    console.error("Error fetching top-rated books:", error);
     res.status(500).json({ message: "Internal server error", error });
   }
 });
 
-// remove book from wishlist
-booksRouter.delete("/:isbn/wishlist", async (req: CustomRequest, res: Response) => {
+// Update book price by ISBN
+booksRouter.put("/isbn/:isbn/price", async (req: Request, res: Response) => {
   try {
-    const isbn = req.params.isbn;
-    const userId = req.userId;
+    const { isbn } = req.params;
+    const { newPrice } = req.body;
 
-    const isbnExists = await BookMetadata.exists({ isbn });
-
-    if (!isbnExists) {
-      return res.status(404).json({ message: "Book not found!" });
+    // Validate new price
+    if (newPrice <= 0) {
+      return res.status(400).json({ message: "Price must be greater than 0" });
     }
 
-    const userPreferences = await UserPreferences.findOneAndUpdate(
-      { UserId: userId },
-      { $pull: { WishList: isbn } },
+    // Update price in MongoDB
+    const mongoUpdateResult = await BookMetadata.findOneAndUpdate(
+      { isbn },
+      { $set: { price: newPrice } },
       { new: true }
     );
 
-    if (!userPreferences) {
-      return res.status(404).json({ message: "User preferences not found!" });
+    if (!mongoUpdateResult) {
+      return res.status(404).json({ message: "Book not found in MongoDB" });
     }
 
-    res.status(200).json(userPreferences);
+    // Update price in MSSQL
+    const mssqlPool = await sql.connect(mssqlConfig);
+    const mssqlUpdateResult = await mssqlPool
+      .request()
+      .input("ISBN", sql.VarChar, isbn)
+      .input("Price", sql.Decimal(10, 2), newPrice).query(`
+        UPDATE Books
+        SET Price = @Price
+        WHERE ISBN = @ISBN
+      `);
+
+    if (mssqlUpdateResult.rowsAffected[0] === 0) {
+      return res.status(404).json({ message: "Book not found in MSSQL" });
+    }
+
+    // Clear cache for the updated book in Redis
+    await redisClient.del(`book-isbn-${isbn}`);
+
+    res.status(200).json({ message: "Book price updated successfully" });
   } catch (error) {
-    if (error.number === 52000) {
-      return res.status(400).json({ message: error.message });
+    console.error("Error updating book price:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+// Update book stock by ISBN
+booksRouter.put("/isbn/:isbn/stock", async (req: Request, res: Response) => {
+  try {
+    const { isbn } = req.params;
+    const { newStock } = req.body;
+
+    // Validate new stock
+    if (newStock < 0) {
+      return res
+        .status(400)
+        .json({ message: "Stock must be greater than or equal to 0" });
     }
 
-    console.log(error);
+    // Update stock in MongoDB
+    const mongoUpdateResult = await BookMetadata.findOneAndUpdate(
+      { isbn },
+      { $set: { stockQuantity: newStock } },
+      { new: true }
+    );
+
+    if (!mongoUpdateResult) {
+      return res.status(404).json({ message: "Book not found in MongoDB" });
+    }
+
+    // Update stock in MSSQL
+    const mssqlPool = await sql.connect(mssqlConfig);
+    const mssqlUpdateResult = await mssqlPool
+      .request()
+      .input("ISBN", sql.VarChar, isbn)
+      .input("Stock", sql.Int, newStock).query(`
+        UPDATE Books
+        SET StockQuantity = @Stock
+        WHERE ISBN = @ISBN
+      `);
+
+    if (mssqlUpdateResult.rowsAffected[0] === 0) {
+      return res.status(404).json({ message: "Book not found in MSSQL" });
+    }
+
+    // Clear cache for the updated book in Redis
+    await redisClient.del(`book-isbn-${isbn}`);
+
+    res.status(200).json({ message: "Book stock updated successfully" });
+  } catch (error) {
+    console.error("Error updating book stock:", error);
     res.status(500).json({ message: "Internal server error", error });
   }
 });
