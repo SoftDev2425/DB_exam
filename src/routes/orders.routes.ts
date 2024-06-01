@@ -45,8 +45,6 @@ orderRoutes.post("/", async (req: CustomRequest, res: Response) => {
 
     const orderId = result.recordset[0].OrderID;
 
-    console.log(result);
-
     if (!orderId) {
       return res.status(500).json({ message: "Order creation failed" });
     }
