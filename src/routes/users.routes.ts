@@ -100,45 +100,34 @@ router.put("/preferences", async (req: CustomRequest, res: Response) => {
   }
 });
 
-router.delete("/delete", async (req: Request, res: Response) => {
+router.delete("/delete", async (req: CustomRequest, res: Response) => {
   try {
-    const sessionToken = req.cookies.sessionToken;
-    
-    if (!sessionToken) {
-      return res.status(400).json({ message: "No session token found!" });
-    }
-
-    // Check if the session token exists in Redis
-    const userId = await redisClient.get(`sessionToken-${sessionToken}`);
-
-    if (!userId) {
-      return res.status(400).json({ message: "Invalid session token!" });
-    }
-
-    console.log(userId);
-    
+    const userId = req.userId;
 
     const con = await sql.connect(mssqlConfig);
 
+    // Remove basket from Redis
+    await redisClient.del(`basket-${userId}`);
+
+    // Get list of session tokens for the user
+    const userSessions = await redisClient.lRange(`userSessions-${userId}`, 0, -1);
+
+    // Delete all session tokens
+    for (const session of userSessions) {
+      await redisClient.del(`sessionToken-${session}`);
+    }
+
+    // Delete the list of session tokens
+    await redisClient.del(`userSessions-${userId}`);
+
     // Call stored procedure to anonymize the user
-    await con.request()
-      .input("UserID", sql.UniqueIdentifier, userId)
-      .execute("AnonymizeUser");
-
-    await con.close();
-    
-    // Remove token from Redis
-    await redisClient.del(`sessionToken-${sessionToken}`);
-
-    // Remove the session token from the user's session list
-    const userSessionsKey = `userSessions-${userId}`;
-    await redisClient.lRem(userSessionsKey, 1, sessionToken);
+    await con.request().input("UserID", sql.UniqueIdentifier, userId).execute("AnonymizeUser");
 
     // Clear the cookie
     res.clearCookie("sessionToken");
-    
-    return res.status(200).json({ message: "User deleted successfully!" });
 
+    await con.close();
+    return res.status(200).json({ message: "User deleted successfully!" });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
