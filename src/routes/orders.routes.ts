@@ -116,6 +116,46 @@ orderRoutes.get("/:orderId", async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error", error });
   }
 });
+
 // get all user orders
+orderRoutes.get("/", async (req: CustomRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+
+    const con = await sql.connect(mssqlConfig);
+
+    const result = await con.request().input("UserID", sql.UniqueIdentifier, userId).execute("GetOrdersByUserId");
+
+    const orders = result.recordset;
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: "Orders not found" });
+    }
+
+    const userOrders = orders.map((order) => ({
+      orderId: order.OrderID,
+      userId: order.UserID,
+      orderDate: order.OrderDate,
+      shippingAddress: order.ShippingAddress,
+      shippingCity: order.ShippingCity,
+      status: order.Status,
+      orderCreatedAt: order.OrderCreatedAt,
+      orderUpdatedAt: order.OrderUpdatedAt,
+      orderLines: orders.map((item) => ({
+        orderLineId: item.OrderLineID,
+        isbn: item.ISBN,
+        quantity: item.Quantity,
+        unitPrice: item.UnitPrice,
+        bookTitle: item.BookTitle,
+        bookPrice: item.BookPrice,
+      })),
+    }));
+
+    return res.status(200).json({ orders: userOrders });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error", error });
+  }
+});
 
 export default orderRoutes;
