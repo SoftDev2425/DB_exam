@@ -16,5 +16,6 @@ BEGIN
     WHERE 
         StockQuantity <= @StockQuantity
     ORDER BY 
-        UpdatedAt DESC;
+        UpdatedAt DESC,
+        StockQuantity ASC;
 END;
