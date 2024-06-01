@@ -48,7 +48,7 @@ basketRoutes.post("/add", async (req: CustomRequest, res: Response) => {
     const latestQuantity = bookInfo.StockQuantity;
 
     if (latestQuantity === 0) {
-      return res.status(410).json({ message: `Book with ${isbn} is out of stock.`, isbn });
+      return res.status(410).json({ message: `Book with ISBN: ${isbn} is out of stock.`, isbn });
     }
 
     if (quantity > latestQuantity) {
@@ -65,6 +65,10 @@ basketRoutes.post("/add", async (req: CustomRequest, res: Response) => {
 
     // Update basket
     const bookIndex = basket.books.findIndex((book: any) => book.isbn === isbn);
+
+    if (bookIndex === -1 && quantity === 0) {
+      return res.status(400).json({ message: "Can't add 0 books" });
+    }
 
     if (bookIndex !== -1) {
       if (quantity === 0) {
@@ -108,6 +112,8 @@ basketRoutes.get("/get", async (req: CustomRequest, res: Response) => {
 
     const con = await sql.connect(mssqlConfig);
 
+    let msg = "";
+
     // Update the basket with the latest data from the database
     for (let book of basket.books) {
       const latestBookData = await con.query`SELECT Price, StockQuantity FROM Books WHERE ISBN = ${book.isbn}`;
@@ -119,16 +125,32 @@ basketRoutes.get("/get", async (req: CustomRequest, res: Response) => {
 
         if (book.quantity > bookInfo.StockQuantity) {
           book.quantity = bookInfo.StockQuantity; // Adjust the quantity if it exceeds the latest stock
+          msg += `Quantity of book with ISBN: ${book.isbn} has been adjusted to ${bookInfo.StockQuantity} due to stock changes.`;
         }
       }
     }
-    
+
     await redisClient.set(`basket-${userId}`, JSON.stringify(basket), {
       EX: 60 * 60 * 24 * 7,
     });
 
     await con.close();
-    return res.status(200).json(basket);
+    return res.status(200).json({
+      msg,
+      basket,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+basketRoutes.delete("/", async (req: CustomRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+
+    await redisClient.del(`basket-${userId}`);
+    return res.status(200).json({ message: "Basket cleared" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error", error });
