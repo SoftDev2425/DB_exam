@@ -76,12 +76,25 @@ orderRoutes.post("/", async (req: CustomRequest, res: Response) => {
   }
 });
 
-orderRoutes.get("/", async (req: Request, res: Response) => {
+// get order by id
+orderRoutes.get("/:orderId", async (req: Request, res: Response) => {
   try {
-    return res.status(200).json({ message: "Orders route" });
+    const orderId = req.params.orderId;
+
+    const con = await sql.connect(mssqlConfig);
+
+    const result = await con.request().input("OrderID", sql.UniqueIdentifier, orderId).execute("GetOrder");
+
+    const order = result.recordset[0];
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    return res.status(200).json({ order });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error", error });
   }
 });
 
