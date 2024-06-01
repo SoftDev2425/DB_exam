@@ -1,7 +1,15 @@
+import { BrowserRouter } from "react-router-dom";
+import Routes from "./Routes";
+import { AuthProvider } from "./context/AuthContext";
+
 function App() {
   return (
     <>
-      <h1 className="text-3xl font-bold underline">BookStore!</h1>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes />
+        </AuthProvider>
+      </BrowserRouter>
     </>
   );
 }
