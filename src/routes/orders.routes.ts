@@ -3,6 +3,7 @@ import { CustomRequest } from "../ICustomRequest";
 import { redisClient } from "../../redis/client";
 import { mssqlConfig } from "../utils/mssqlConnection";
 import sql from "mssql";
+import BookMetadata from "../models/bookmetdata.model";
 
 const orderRoutes = Router();
 
@@ -47,6 +48,22 @@ orderRoutes.post("/", async (req: CustomRequest, res: Response) => {
 
     if (!orderId) {
       return res.status(500).json({ message: "Order creation failed" });
+    }
+
+    // update bookmetadata in mongodb
+    const bookIds = basketItems.books.map((book: any) => book.isbn);
+    const books = await BookMetadata.find({
+      isbn: { $in: bookIds },
+    });
+
+    for (const book of books) {
+      const bookInBasket = basketItems.books.find((b: any) => b.isbn === book.isbn);
+      if (bookInBasket) {
+        const data = await con.query`SELECT * FROM Books WHERE ISBN = ${book.isbn}`;
+        const bookInfo = data.recordsets[0][0];
+        const latestQuantity = bookInfo.StockQuantity;
+        await BookMetadata.updateOne({ isbn: book.isbn }, { stockQuantity: latestQuantity });
+      }
     }
 
     // clear basket
