@@ -124,32 +124,45 @@ orderRoutes.get("/", async (req: CustomRequest, res: Response) => {
 
     const con = await sql.connect(mssqlConfig);
 
-    const result = await con.request().input("UserID", sql.UniqueIdentifier, userId).execute("GetOrdersByUserId");
+    const result = await con.request().input("UserID", sql.UniqueIdentifier, userId).execute("GetUserOrders");
 
     const orders = result.recordset;
 
     if (orders.length === 0) {
-      return res.status(404).json({ message: "Orders not found" });
+      return res.status(404).json({ message: "No orders found" });
     }
 
-    const userOrders = orders.map((order) => ({
-      orderId: order.OrderID,
-      userId: order.UserID,
-      orderDate: order.OrderDate,
-      shippingAddress: order.ShippingAddress,
-      shippingCity: order.ShippingCity,
-      status: order.Status,
-      orderCreatedAt: order.OrderCreatedAt,
-      orderUpdatedAt: order.OrderUpdatedAt,
-      orderLines: orders.map((item) => ({
-        orderLineId: item.OrderLineID,
-        isbn: item.ISBN,
-        quantity: item.Quantity,
-        unitPrice: item.UnitPrice,
-        bookTitle: item.BookTitle,
-        bookPrice: item.BookPrice,
-      })),
-    }));
+    // Group the orders and their order lines
+    const userOrders = orders.reduce((acc, item) => {
+      let order = acc.find((o) => o.orderId === item.OrderID);
+      if (!order) {
+        order = {
+          orderId: item.OrderID,
+          userId: item.UserID,
+          orderDate: item.OrderDate,
+          shippingAddress: item.ShippingAddress,
+          shippingCity: item.ShippingCity,
+          status: item.Status,
+          orderCreatedAt: item.OrderCreatedAt,
+          orderUpdatedAt: item.OrderUpdatedAt,
+          orderLines: [],
+        };
+        acc.push(order);
+      }
+
+      if (item.OrderLineID) {
+        order.orderLines.push({
+          orderLineId: item.OrderLineID,
+          isbn: item.ISBN,
+          quantity: item.Quantity,
+          unitPrice: item.UnitPrice,
+          bookTitle: item.BookTitle,
+          bookPrice: item.BookPrice,
+        });
+      }
+
+      return acc;
+    }, []);
 
     return res.status(200).json({ orders: userOrders });
   } catch (error) {
