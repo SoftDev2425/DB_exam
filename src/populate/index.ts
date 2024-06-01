@@ -37,6 +37,8 @@ const scrapeAndInsertIntoDBs = async () => {
     ];
 
     await mongoose.connection.db.dropDatabase();
+    await con.query`DELETE FROM Books`;
+
 
     for (const book of books) {
       let generatedStockQuantity = Math.floor(Math.random() * 11);
