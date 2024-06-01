@@ -42,12 +42,12 @@ const scrapeAndInsertIntoDBs = async () => {
       let generatedStockQuantity = Math.floor(Math.random() * 11);
       let generatedPrice = prices[Math.floor(Math.random() * prices.length)];
 
-      // await con.query`
-      //   BEGIN
-      //       INSERT INTO Books (isbn, title, StockQuantity, Price)
-      //       VALUES (${book.isbn}, ${book.title}, ${generatedStockQuantity}, ${generatedPrice});
-      //   END
-      // `;
+      await con.query`
+        BEGIN
+            INSERT INTO Books (isbn, title, StockQuantity, Price)
+            VALUES (${book.isbn}, ${book.title}, ${generatedStockQuantity}, ${generatedPrice});
+        END
+      `;
 
       await BookMetadata.create({
         title: book.title,

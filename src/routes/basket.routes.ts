@@ -18,11 +18,10 @@ basketRoutes.post("/add", async (req: CustomRequest, res: Response) => {
     }
 
     // Validate isbn and quantity
-    const isbnRegex =
-      /^(?:ISBN(?:-1[03])?:? )?(?=[-0-9X ]{13,17}$|[-0-9 ]{10,16}$)(?:97[89][- ]?)?(?:[0-9][- ]?){9}[0-9X]$/;
-    if (!isbnRegex.test(isbn)) {
-      return res.status(400).json({ message: "Invalid ISBN" });
-    }
+    // const isbnRegex = /^\d{9}-\d{1}$/;
+    // if (!isbnRegex.test(isbn)) {
+    //   return res.status(400).json({ message: "Invalid ISBN" });
+    // }
 
     if (typeof quantity !== "number") {
       return res.status(400).json({ message: "Quantity must be a number" });
