@@ -3,6 +3,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/use-toast";
+import { Input } from "./ui/input";
 
 interface Book {
   isbn: string;
@@ -82,10 +83,9 @@ const BasketContent = () => {
                   <p className="text-sm text-gray-500">{book.authors.join(", ")}</p>
                 </div>
               </div>
-              <div>
-                <p>
-                  {book.quantity} x {book.price} kr
-                </p>
+              <div className="flex items-center gap-2">
+                <Input type="number" placeholder="count" className="w-16" value={book.quantity} />
+                <p>x {book.price} kr</p>
               </div>
             </div>
           ))

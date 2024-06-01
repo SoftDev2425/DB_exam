@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
+import axios from "axios";
+import { useToast } from "./ui/use-toast";
 
 interface BookProps {
   book: {
@@ -28,6 +30,25 @@ interface BookProps {
 
 const Book = ({ book }: BookProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleAddToCart = async () => {
+    const response = await axios.post(
+      `http://localhost:3000/basket/add`,
+      { isbn: book.isbn, quantity: 1 },
+      { withCredentials: true }
+    );
+
+    if (response.status !== 201) {
+      console.log("Error adding book to cart");
+      return;
+    }
+
+    toast({
+      title: "Book added to cart",
+      description: `${book.title} has been added to your cart`,
+    });
+  };
 
   return (
     <div className="bg-white rounded-md overflow-hidden shadow-md hover:shadow-lg flex flex-col hover:scale-105 duration-100 ease-in-out">
@@ -60,7 +81,9 @@ const Book = ({ book }: BookProps) => {
           <Button className="mr-2" onClick={() => navigate(`/book/${book._id}`)}>
             Details
           </Button>
-          <Button className="bg-blue-500 hover:bg-blue-600">Add to Cart</Button>
+          <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleAddToCart}>
+            Add to Cart
+          </Button>
         </div>
       </div>
     </div>

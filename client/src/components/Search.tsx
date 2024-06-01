@@ -79,7 +79,9 @@ const Search = () => {
       {/* Found books */}
       {books && books.books && books.books.length > 0 && (
         <div className="mb-4">
-          <span>Found {books.total} books for "{searchTerm}"</span>
+          <span>
+            Found {books.total} books for "{searchTerm}"
+          </span>
         </div>
       )}
 
