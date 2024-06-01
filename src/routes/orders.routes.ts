@@ -14,9 +14,7 @@ orderRoutes.post("/", async (req: CustomRequest, res: Response) => {
     const { shippingAddress, shippingCity } = req.body;
 
     if (!shippingAddress || !shippingCity) {
-      return res
-        .status(400)
-        .json({ message: "Shipping address and city are required" });
+      return res.status(400).json({ message: "Shipping address and city are required" });
     }
 
     // get basket from redis
@@ -71,29 +69,12 @@ orderRoutes.post("/", async (req: CustomRequest, res: Response) => {
     // clear basket
     await redisClient.del(`basket-${userId}`);
 
-    return res
-      .status(200)
-      .json({ message: "Order created successfully", orderId });
+    return res.status(200).json({ message: "Order created successfully", orderId });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error", error });
   }
 });
-
-
-orderRoutes.get("/", async (req: CustomRequest, res: Response) => {
-  try {
-    const userId = req.userId;
-
-    const userBasket = redisClient.get(`basket-${userId}`);
-
-    if (!userBasket) {
-      return res.status(404).json({ message: "Basket not found!" });
-    }
-
-    console.log(userBasket);
-
-    return res.status(200).json({ message: "Orders route" });
 
 // get order by id
 orderRoutes.get("/:orderId", async (req: Request, res: Response) => {
