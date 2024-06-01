@@ -1,9 +1,46 @@
--- Set the number of reviews you want to insert
-DECLARE @NumReviews INT = 100;
+BEGIN TRANSACTION;
 
--- Generate reviews
+-- Set the number of users, orders, and reviews you want to insert
+DECLARE @NumUsers INT = 1500;
+DECLARE @NumOrders INT = 2000;
+DECLARE @NumReviews INT = 1250;
+
 DECLARE @i INT = 1;
+WHILE @i <= @NumUsers
+BEGIN
+    INSERT INTO Users (FirstName, LastName, Email, PasswordHash, DateOfBirth, Gender)
+    VALUES (
+        LEFT(CONVERT(VARCHAR(36), NEWID()), 8),                                 -- Random FirstName
+        LEFT(CONVERT(VARCHAR(36), NEWID()), 8),                                 -- Random LastName
+        LEFT(CONVERT(VARCHAR(36), NEWID()), 8) + '@example.com',                -- Random Email
+        HASHBYTES('SHA2_256', CONVERT(VARCHAR(36), NEWID())),                   -- Random PasswordHash
+        DATEADD(DAY, -ABS(CHECKSUM(NEWID()) % 20000), GETDATE()),               -- Random DateOfBirth
+        CASE ABS(CHECKSUM(NEWID()) % 2) 
+            WHEN 0 THEN 'M' 
+            ELSE 'F' 
+        END                                                                     -- Random Gender
+    );
 
+    SET @i = @i + 1;
+END
+
+
+-- Generate random orders
+SET @i = 1;
+WHILE @i <= @NumOrders
+BEGIN
+    INSERT INTO Orders (UserID, ShippingAddress, ShippingCity)
+    SELECT 
+        (SELECT TOP 1 UserID FROM Users ORDER BY NEWID()), -- Random UserID
+        LEFT(NEWID(), 16),                                 -- Random ShippingAddress
+        LEFT(NEWID(), 8)                                   -- Random ShippingCity
+    ;
+
+    SET @i = @i + 1;
+END
+
+-- Generate random reviews
+SET @i = 1;
 WHILE @i <= @NumReviews
 BEGIN
     -- Generate a random rating between 1 and 5
@@ -46,4 +83,6 @@ BEGIN
         END; 
 
     SET @i = @i + 1;
-END;
+END
+
+COMMIT TRANSACTION;

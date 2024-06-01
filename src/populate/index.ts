@@ -12,6 +12,7 @@ import books10 from "../../data/books10.json";
 import sql from "mssql";
 import { mssqlConfig } from "../utils/mssqlConnection";
 import mongoose from "mongoose";
+import fs from "fs";
 
 const scrapeAndInsertIntoDBs = async () => {
   console.log("Scraping and inserting into DBs...");
@@ -72,6 +73,28 @@ const scrapeAndInsertIntoDBs = async () => {
         stockQuantity: generatedStockQuantity,
       });
     }
+
+    var tables = fs.readFileSync("./sql/tables.sql").toString();
+    var sp = fs.readFileSync("./sql/populateReviews.sql").toString();
+    var sp2 = fs.readFileSync("./sql/procedures/AnonymizationProcedure.sql").toString();
+    var sp3 = fs.readFileSync("./sql/procedures/CreateOrder.sql").toString();
+    var sp4 = fs.readFileSync("./sql/procedures/GetBooksByStockQuantity.sql").toString();
+    var sp5 = fs.readFileSync("./sql/procedures/GetOrderById.sql").toString();
+    var sp6 = fs.readFileSync("./sql/procedures/GetUserOrders").toString();
+
+    console.log("Adding stored procedures...");
+
+    await Promise.all([
+      con.query(tables),
+      con.query(sp),
+      con.query(sp2),
+      con.query(sp3),
+      con.query(sp4),
+      con.query(sp5),
+      con.query(sp6),
+    ]);
+
+    console.log("Stored procedures added successfully!");
 
     await con.close();
     await mongoose.disconnect();
