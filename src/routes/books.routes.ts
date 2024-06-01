@@ -457,6 +457,7 @@ booksRouter.get("/top-rated", async (req: Request, res: Response) => {
   }
 });
 
+// Update book price by ISBN
 booksRouter.put("/isbn/:isbn/price", async (req: Request, res: Response) => {
   try {
     const { isbn } = req.params;
@@ -499,6 +500,55 @@ booksRouter.put("/isbn/:isbn/price", async (req: Request, res: Response) => {
     res.status(200).json({ message: "Book price updated successfully" });
   } catch (error) {
     console.error("Error updating book price:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+// Update book stock by ISBN
+booksRouter.put("/isbn/:isbn/stock", async (req: Request, res: Response) => {
+  try {
+    const { isbn } = req.params;
+    const { newStock } = req.body;
+
+    // Validate new stock
+    if (newStock < 0) {
+      return res
+        .status(400)
+        .json({ message: "Stock must be greater than or equal to 0" });
+    }
+
+    // Update stock in MongoDB
+    const mongoUpdateResult = await BookMetadata.findOneAndUpdate(
+      { isbn },
+      { $set: { stockQuantity: newStock } },
+      { new: true }
+    );
+
+    if (!mongoUpdateResult) {
+      return res.status(404).json({ message: "Book not found in MongoDB" });
+    }
+
+    // Update stock in MSSQL
+    const mssqlPool = await sql.connect(mssqlConfig);
+    const mssqlUpdateResult = await mssqlPool
+      .request()
+      .input("ISBN", sql.VarChar, isbn)
+      .input("Stock", sql.Int, newStock).query(`
+        UPDATE Books
+        SET StockQuantity = @Stock
+        WHERE ISBN = @ISBN
+      `);
+
+    if (mssqlUpdateResult.rowsAffected[0] === 0) {
+      return res.status(404).json({ message: "Book not found in MSSQL" });
+    }
+
+    // Clear cache for the updated book in Redis
+    await redisClient.del(`book-isbn-${isbn}`);
+
+    res.status(200).json({ message: "Book stock updated successfully" });
+  } catch (error) {
+    console.error("Error updating book stock:", error);
     res.status(500).json({ message: "Internal server error", error });
   }
 });
