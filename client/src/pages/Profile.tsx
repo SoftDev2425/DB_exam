@@ -1,7 +1,8 @@
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Select, { createFilter } from "react-select";
 import { toast } from "sonner";
 
@@ -11,6 +12,7 @@ const Profile = () => {
   const [languages, setLanguages] = useState([]);
   const [formats, setFormats] = useState([]);
   const [authors, setAuthors] = useState([]);
+  const navigate = useNavigate();
 
   const [selectedGenres, setSelectedGenres] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState([]);
@@ -73,6 +75,30 @@ const Profile = () => {
 
   const handleRemove = (setter, value) => {
     setter((prev) => prev.filter((item) => item.value !== value));
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const confirmation = window.confirm("Are you sure you want to delete your account? This action is irreversible.");
+
+      if (!confirmation) {
+        return;
+      }
+
+      const response = await axios.delete("http://localhost:3000/user/delete", { withCredentials: true });
+      if (response.status === 200) {
+        toast.success("Account deleted successfully");
+        navigate("/login");
+      } else {
+        console.log("Error deleting account");
+        toast.error("Error deleting account");
+      }
+    } catch (error) {
+      console.log("Error deleting account", error);
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message);
+      }
+    }
   };
 
   return (
@@ -196,6 +222,14 @@ const Profile = () => {
         ) : (
           <p>Loading user preferences...</p>
         )}
+      </div>
+
+      {/* Delete user account */}
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-4">Delete Account</h2>
+        <Button className="p-2 rounded-md w-full" onClick={handleDeleteAccount}>
+          Delete Account
+        </Button>
       </div>
     </>
   );
