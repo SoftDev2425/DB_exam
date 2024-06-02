@@ -83,15 +83,88 @@ orderRoutes.get("/:orderId", async (req: Request, res: Response) => {
 
     const con = await sql.connect(mssqlConfig);
 
-    const result = await con.request().input("OrderID", sql.UniqueIdentifier, orderId).execute("GetOrder");
+    const result = await con.request().input("OrderID", sql.UniqueIdentifier, orderId).execute("GetOrderById");
 
-    const order = result.recordset[0];
+    const order = result.recordset;
 
-    if (!order) {
+    if (order.length === 0) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    return res.status(200).json({ order });
+    const orderDetails = {
+      orderId: order[0].OrderID,
+      userId: order[0].UserID,
+      orderDate: order[0].OrderDate,
+      shippingAddress: order[0].ShippingAddress,
+      shippingCity: order[0].ShippingCity,
+      status: order[0].Status,
+      orderCreatedAt: order[0].OrderCreatedAt,
+      orderUpdatedAt: order[0].OrderUpdatedAt,
+      orderLines: order.map((item) => ({
+        orderLineId: item.OrderLineID,
+        isbn: item.ISBN,
+        quantity: item.Quantity,
+        unitPrice: item.UnitPrice,
+        bookTitle: item.BookTitle,
+        bookPrice: item.BookPrice,
+      })),
+    };
+
+    return res.status(200).json({ order: orderDetails });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+// get all user orders
+orderRoutes.get("/", async (req: CustomRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+
+    const con = await sql.connect(mssqlConfig);
+
+    const result = await con.request().input("UserID", sql.UniqueIdentifier, userId).execute("GetUserOrders");
+
+    const orders = result.recordset;
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: "No orders found" });
+    }
+
+    // Group the orders and their order lines
+    const userOrders = orders.reduce((acc, item) => {
+      let order = acc.find((o) => o.orderId === item.OrderID);
+      if (!order) {
+        order = {
+          orderId: item.OrderID,
+          userId: item.UserID,
+          orderDate: item.OrderDate,
+          shippingAddress: item.ShippingAddress,
+          shippingCity: item.ShippingCity,
+          status: item.Status,
+          orderCreatedAt: item.OrderCreatedAt,
+          orderUpdatedAt: item.OrderUpdatedAt,
+          orderLines: [],
+        };
+        acc.push(order);
+      }
+
+      if (item.OrderLineID) {
+        order.orderLines.push({
+          orderLineId: item.OrderLineID,
+          isbn: item.ISBN,
+          quantity: item.Quantity,
+          unitPrice: item.UnitPrice,
+          bookTitle: item.BookTitle,
+          bookPrice: item.BookPrice,
+        });
+      }
+
+      return acc;
+    }, []);
+
+    return res.status(200).json({ orders: userOrders });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error", error });

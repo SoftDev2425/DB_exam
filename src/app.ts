@@ -14,7 +14,12 @@ const app = express(); // New express instance
 const port = 3000; // Port number
 
 // Express configuration
-app.use(cors()); // Enable CORS
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+); // Enable CORS
 app.use(helmet()); // Enable Helmet
 app.use(morgan("dev")); // Enable Morgan
 app.use(bodyParser.json()); // Enable JSON parsing

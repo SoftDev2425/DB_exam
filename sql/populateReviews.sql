@@ -1,9 +1,75 @@
--- Set the number of reviews you want to insert
-DECLARE @NumReviews INT = 100;
+BEGIN TRANSACTION;
 
--- Generate reviews
+-- Create tables for first names and last names
+IF OBJECT_ID('FirstNames', 'U') IS NOT NULL DROP TABLE FirstNames;
+IF OBJECT_ID('LastNames', 'U') IS NOT NULL DROP TABLE LastNames;
+
+CREATE TABLE FirstNames (
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    FirstName VARCHAR(50)
+);
+
+CREATE TABLE LastNames (
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    LastName VARCHAR(50)
+);
+
+-- Insert common first names
+INSERT INTO FirstNames (FirstName)
+VALUES 
+('James'), ('John'), ('Robert'), ('Michael'), ('William'),
+('David'), ('Richard'), ('Joseph'), ('Thomas'), ('Charles'),
+('Christopher'), ('Daniel'), ('Matthew'), ('Anthony'), ('Mark'),
+('Donald'), ('Steven'), ('Paul'), ('Andrew'), ('Joshua');
+
+-- Insert common last names
+INSERT INTO LastNames (LastName)
+VALUES 
+('Smith'), ('Johnson'), ('Williams'), ('Jones'), ('Brown'),
+('Davis'), ('Miller'), ('Wilson'), ('Moore'), ('Taylor'),
+('Anderson'), ('Thomas'), ('Jackson'), ('White'), ('Harris'),
+('Martin'), ('Thompson'), ('Garcia'), ('Martinez'), ('Robinson');
+
+-- Set the number of users, orders, and reviews you want to insert
+DECLARE @NumUsers INT = 10000;
+DECLARE @NumOrders INT = 6000;
+DECLARE @NumReviews INT = 3000;
+
 DECLARE @i INT = 1;
+WHILE @i <= @NumUsers
+BEGIN
+    INSERT INTO Users (FirstName, LastName, Email, PasswordHash, DateOfBirth, Gender)
+    VALUES (
+        (SELECT TOP 1 FirstName FROM FirstNames ORDER BY NEWID()),              -- Random FirstName
+        (SELECT TOP 1 LastName FROM LastNames ORDER BY NEWID()),                -- Random LastName
+        LEFT(CONVERT(VARCHAR(36), NEWID()), 8) + '@example.com',                -- Random Email
+        HASHBYTES('SHA2_256', CONVERT(VARCHAR(36), NEWID())),                   -- Random PasswordHash
+        DATEADD(DAY, -ABS(CHECKSUM(NEWID()) % 20000), GETDATE()),               -- Random DateOfBirth
+        CASE ABS(CHECKSUM(NEWID()) % 2) 
+            WHEN 0 THEN 'M' 
+            ELSE 'F' 
+        END                                                                     -- Random Gender
+    );
 
+    SET @i = @i + 1;
+END
+
+-- Generate random orders
+SET @i = 1;
+WHILE @i <= @NumOrders
+BEGIN
+    INSERT INTO Orders (UserID, ShippingAddress, ShippingCity)
+    SELECT 
+        (SELECT TOP 1 UserID FROM Users ORDER BY NEWID()), -- Random UserID
+        LEFT(NEWID(), 16),                                 -- Random ShippingAddress
+        LEFT(NEWID(), 8)                                   -- Random ShippingCity
+    ;
+
+    SET @i = @i + 1;
+END
+
+-- Generate random reviews
+SET @i = 1;
 WHILE @i <= @NumReviews
 BEGIN
     -- Generate a random rating between 1 and 5
@@ -46,4 +112,6 @@ BEGIN
         END; 
 
     SET @i = @i + 1;
-END;
+END
+
+COMMIT TRANSACTION;

@@ -12,6 +12,8 @@ import books10 from "../../data/books10.json";
 import sql from "mssql";
 import { mssqlConfig } from "../utils/mssqlConnection";
 import mongoose from "mongoose";
+import fs from "fs";
+import { populateNeo } from "./populateNeo";
 
 const scrapeAndInsertIntoDBs = async () => {
   console.log("Scraping and inserting into DBs...");
@@ -37,7 +39,38 @@ const scrapeAndInsertIntoDBs = async () => {
     ];
 
     await mongoose.connection.db.dropDatabase();
-    await con.query`DELETE FROM Books`;
+    await con.query`
+    BEGIN;
+    DROP TABLE IF EXISTS OrderLine;
+    DROP TABLE IF EXISTS Reviews;
+    DROP TABLE IF EXISTS Orders;
+    DROP TABLE IF EXISTS Users;
+    DROP TABLE IF EXISTS Books;
+    DROP PROCEDURE IF EXISTS AnonymizeUser;
+    DROP PROCEDURE IF EXISTS CreateOrder;
+    DROP PROCEDURE IF EXISTS GetBooksByStockQuantity;
+    DROP PROCEDURE IF EXISTS GetOrderById;
+    DROP PROCEDURE IF EXISTS GetUserOrders;
+    END;
+    `;
+
+    var tables = fs.readFileSync("./sql/tables.sql").toString();
+    var sp2 = fs.readFileSync("./sql/procedures/AnonymizationProcedure.sql").toString();
+    var sp3 = fs.readFileSync("./sql/procedures/CreateOrder.sql").toString();
+    var sp4 = fs.readFileSync("./sql/procedures/GetBooksByStockQuantity.sql").toString();
+    var sp5 = fs.readFileSync("./sql/procedures/GetOrderById.sql").toString();
+    var sp6 = fs.readFileSync("./sql/procedures/GetUserOrders.sql").toString();
+
+    console.log("Adding tables and stored procedures...");
+
+    await con.query(tables);
+    await con.query(sp2);
+    await con.query(sp3);
+    await con.query(sp4);
+    await con.query(sp5);
+    await con.query(sp6);
+
+    console.log("Tables and procedures added successfully!");
 
     for (const book of books) {
       let generatedStockQuantity = Math.floor(Math.random() * 11);
@@ -73,11 +106,15 @@ const scrapeAndInsertIntoDBs = async () => {
       });
     }
 
+    var populateReviewsAndOrders = fs.readFileSync("./sql/populateReviews.sql").toString();
+    await con.query(populateReviewsAndOrders);
     await con.close();
     await mongoose.disconnect();
     console.log("Scraping and inserting into DBs completed successfully!");
+    process.exit(0);
   } catch (error) {
     console.log(error);
+    process.exit(1);
   } finally {
   }
 };
