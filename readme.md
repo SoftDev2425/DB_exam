@@ -14,9 +14,8 @@ This repository contains the code for the DB_Exam project.
 .--.-.-.-.-.
 
 1. In root dir run `docker-compose up -d` to start all necessary databases.
-2. Create the necessary tables by running the `tables.sql` script.
-3. Run the procedures by executing the `run_procedures.sql` script.
-4. $PLACEHOLDER$
+2. Run `npm run seed`. This will create the necessary tables, procedures and populate the database (Might take couple of seconds - be patient 😁)
+3. Run `npm run neo`. This will add data to the neo4j database.
 
 ## Contributing
 
