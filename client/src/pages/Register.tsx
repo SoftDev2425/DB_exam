@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import axios from "axios";
+import { toast } from "sonner";
 
 const Register: React.FC = () => {
   const { setAuthenticated } = useContext(AuthContext);
@@ -18,20 +19,41 @@ const Register: React.FC = () => {
   const [gender, setGender] = useState("");
 
   const handleRegister = async () => {
-    const res = await axios.post("http://localhost:5000/api/auth/register", {
-      firstName,
-      lastName,
-      email,
-      password,
-      dateOfBirth,
-      gender,
-    });
+    try {
+      console.log({
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        password: password,
+        dateOfBirth: dateOfBirth.split("-").join("-"),
+        gender: gender,
+      });
 
-    if (res.status === 201) {
-      setAuthenticated(true);
+      const res = await axios.post(
+        "http://localhost:3000/api/auth/register",
+        {
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          password: password,
+          dateOfBirth: dateOfBirth.split("-").join("-"),
+          gender: gender,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (res.status === 201) {
+        toast.success("User created successfully!");
+        setAuthenticated(true);
+      }
+
+      navigate("/login");
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred while registering.");
     }
-
-    navigate("/login");
   };
 
   return (
@@ -96,18 +118,19 @@ const Register: React.FC = () => {
         </div>
         <div>
           <Label htmlFor="gender">Gender</Label>
-          <Select>
+          <Select
+            value={gender}
+            onValueChange={(value) => {
+              setGender(value);
+            }}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a gender" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem onClick={() => setGender("M")} value="Male">
-                  Male
-                </SelectItem>
-                <SelectItem onClick={() => setGender("F")} value="Female">
-                  Female
-                </SelectItem>
+                <SelectItem value="M">Male</SelectItem>
+                <SelectItem value="F">Female</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>

@@ -8,6 +8,8 @@ import Book from "./pages/Book";
 import Orders from "./pages/Orders";
 import Order from "./pages/Order";
 import Profile from "./pages/Profile";
+import SearchPage from "./pages/Search";
+import Checkout from "./pages/Checkout";
 
 type Props = {};
 
@@ -26,10 +28,12 @@ const Routes = () => {
       <Route path="/register" element={<Register />} />
       <Route element={<PrivateRoutes />}>
         <Route path="/" element={<Home />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/book/:id" element={<Book />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/orders/:id" element={<Order />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/checkout" element={<Checkout />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Route>
     </Router>

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
-import axios from "axios";
-import { useToast } from "./ui/use-toast";
+import axios, { AxiosError } from "axios";
+import { toast } from "sonner";
 import { Bookmark } from "lucide-react";
 
 interface BookProps {
@@ -31,24 +31,28 @@ interface BookProps {
 
 const Book = ({ book }: BookProps) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const handleAddToCart = async () => {
-    const response = await axios.post(
-      `http://localhost:3000/basket/add`,
-      { isbn: book.isbn, quantity: 1 },
-      { withCredentials: true }
-    );
+    try {
+      const response = await axios.post(
+        `http://localhost:3000/basket/add`,
+        { isbn: book.isbn, quantity: 1 },
+        { withCredentials: true }
+      );
 
-    if (response.status !== 201) {
-      console.log("Error adding book to cart");
-      return;
+      if (response.status !== 201) {
+        console.log("Error adding book to cart");
+        return;
+      }
+
+      toast.success(`${book.title} has been added to your cart`);
+    } catch (error: AxiosError | unknown) {
+      console.error("Error adding book to cart", error);
+      if (error instanceof AxiosError) {
+        console.error("Error adding book to cart", error.response?.data);
+        toast.error(error.response?.data.message);
+      }
     }
-
-    toast({
-      title: "Book added to cart",
-      description: `${book.title} has been added to your cart`,
-    });
   };
 
   const handleAddToWishList = async () => {
@@ -63,10 +67,7 @@ const Book = ({ book }: BookProps) => {
       return;
     }
 
-    toast({
-      title: "Book added to wishlist",
-      description: `${book.title} has been added to your wishlist`,
-    });
+    toast.success(`${book.title} has been added to your wishlist`);
   };
 
   return (
@@ -104,7 +105,7 @@ const Book = ({ book }: BookProps) => {
           </p>
         </div>
 
-        <div className="mt-4 flex-1">
+        <div className="mt-4 text-center">
           <Button className="mr-2" onClick={() => navigate(`/book/${book.isbn}`)}>
             Details
           </Button>

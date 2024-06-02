@@ -27,7 +27,7 @@ const Header = () => {
   };
 
   return (
-    <div className="flex items-center bg-primary text-white text-center px-8 w-full h-[80px] bg-indigo-400 justify-between">
+    <div className="flex items-center bg-primary text-white text-center px-8 w-full h-[80px] bg-indigo-400 justify-between sticky top-0 z-[9998]">
       <h1
         className="text-3xl font-bold hover:scale-110 duration-100 ease-in-out cursor-pointer"
         onClick={() => navigate("/")}
@@ -36,6 +36,16 @@ const Header = () => {
       </h1>
 
       <div className="flex items-center gap-1">
+        {/* home */}
+        <Button variant="ghost" className="mr-2" onClick={() => navigate("/")}>
+          Home
+        </Button>
+
+        {/* search */}
+        <Button variant="ghost" className="mr-2" onClick={() => navigate("/search")}>
+          Search
+        </Button>
+
         {/* order history */}
         <Button variant="ghost" className="mr-2" onClick={() => navigate("/orders")}>
           Orders
@@ -52,7 +62,7 @@ const Header = () => {
               <ShoppingBasketIcon size={30} />
             </Button>
           </SheetTrigger>
-          <SheetContent>
+          <SheetContent className="z-[9999]">
             <BasketContent />
           </SheetContent>
         </Sheet>

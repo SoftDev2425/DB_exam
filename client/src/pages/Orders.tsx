@@ -32,7 +32,7 @@ const Orders = () => {
   const [sortedOrders, setSortedOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [sortBy, setSortBy] = useState("date");
   const navigate = useNavigate();
 
@@ -110,8 +110,8 @@ const Orders = () => {
             value={sortOrder}
             onChange={handleSortOrderChange}
           >
-            <option value="asc">Ascending</option>
-            <option value="desc">Descending</option>
+            <option value="desc">Latest</option>
+            <option value="asc">Oldest</option>
           </select>
           <select className="border border-gray-200 rounded-lg px-4 py-2" value={sortBy} onChange={handleSortByChange}>
             <option value="total">Total</option>

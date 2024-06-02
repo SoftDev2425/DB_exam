@@ -2,9 +2,9 @@ import { SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { useToast } from "./ui/use-toast";
-import { Input } from "./ui/input";
+import { toast } from "sonner";
 import { Minus, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Book {
   isbn: string;
@@ -31,7 +31,7 @@ interface BasketContentProps {
 const BasketContent = () => {
   const [basketData, setBasketData] = useState<BasketContentProps | null>(null);
   const [refetch, setRefetch] = useState(false);
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,10 +41,7 @@ const BasketContent = () => {
           setBasketData(response.data);
         } else {
           console.log("Error fetching books");
-          toast({
-            title: "Error fetching books",
-            description: "An error occurred while fetching books.",
-          });
+          toast.error("Error fetching books");
         }
       } catch (error) {
         console.log("Error fetching books", error);
@@ -52,7 +49,7 @@ const BasketContent = () => {
     };
 
     fetchData();
-  }, [toast, refetch]);
+  }, [refetch]);
 
   const handleClearBasket = async () => {
     const confirmation = window.confirm("Are you sure you want to clear your basket?");
@@ -77,30 +74,6 @@ const BasketContent = () => {
     await axios.post("http://localhost:3000/basket/add", { isbn, quantity: newCount }, { withCredentials: true });
 
     setRefetch(!refetch);
-  };
-
-  const handleCreateOrder = async () => {
-    try {
-      const response = await axios.post(
-        "http://localhost:3000/orders",
-        {
-          shippingAddress: "",
-          shippingCity: "",
-        },
-        { withCredentials: true }
-      );
-      if (response.status === 201) {
-        toast({
-          title: "Order created",
-          description: "Your order has been created.",
-        });
-        setBasketData({ msg: "Basket cleared", basket: { books: [] } });
-      } else {
-        console.log("Error creating order");
-      }
-    } catch (error) {
-      console.log("Error creating order", error);
-    }
   };
 
   return (
@@ -149,7 +122,7 @@ const BasketContent = () => {
           <Button className="p-2 rounded-md mt-4 w-full" variant={"secondary"} onClick={handleClearBasket}>
             Clear basket
           </Button>
-          <Button className="p-2 rounded-md mt-4 w-full" onClick={handleCreateOrder}>
+          <Button className="p-2 rounded-md mt-4 w-full" onClick={() => navigate("/checkout")}>
             Checkout
           </Button>
         </div>
