@@ -59,7 +59,7 @@ orderRoutes.post("/", async (req: CustomRequest, res: Response) => {
     for (const book of books) {
       const bookInBasket = basketItems.books.find((b: any) => b.isbn === book.isbn);
       if (bookInBasket) {
-        const data = await con.query`SELECT * FROM Books WHERE ISBN = ${book.isbn}`;
+        const data: any = await con.query`SELECT * FROM Books WHERE ISBN = ${book.isbn}`;
         const bookInfo = data.recordsets[0][0];
         const latestQuantity = bookInfo.StockQuantity;
         await BookMetadata.updateOne({ isbn: book.isbn }, { stockQuantity: latestQuantity });
@@ -134,7 +134,7 @@ orderRoutes.get("/", async (req: CustomRequest, res: Response) => {
 
     // Group the orders and their order lines
     const userOrders = orders.reduce((acc, item) => {
-      let order = acc.find((o) => o.orderId === item.OrderID);
+      let order = acc.find((o: any) => o.orderId === item.OrderID);
       if (!order) {
         order = {
           orderId: item.OrderID,

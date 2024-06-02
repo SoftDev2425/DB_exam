@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Moment from "react-moment";
@@ -49,6 +49,11 @@ const Orders = () => {
           setError("Failed to fetch orders.");
         }
       } catch (error) {
+        if (error instanceof AxiosError) {
+          setError(error.response?.data.message);
+          setOrders([]);
+        }
+
         setError("An error occurred while fetching orders.");
       } finally {
         setLoading(false);
@@ -60,6 +65,8 @@ const Orders = () => {
 
   useEffect(() => {
     const sortOrders = () => {
+      if (orders.length === 0) return setSortedOrders([]);
+
       const sortedOrders = [...orders].sort((a, b) => {
         if (sortBy === "date") {
           const dateA = new Date(a.orderDate).getTime();
@@ -94,9 +101,6 @@ const Orders = () => {
     return <p className="text-center text-gray-700">Loading...</p>;
   }
 
-  if (error) {
-    return <p className="text-center text-red-500">{error}</p>;
-  }
 
   return (
     <>

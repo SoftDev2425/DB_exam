@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios, { AxiosError } from "axios";
 import { useParams } from "react-router-dom";
 import Header from "@/components/Header";
+import { toast } from "sonner";
 
 interface Review {
   ReviewID: string;
@@ -45,6 +46,7 @@ const Book = () => {
   const [error, setError] = useState<string | null>(null);
   const [showReviews, setShowReviews] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 0, comment: "" });
+  const [refetchReviews, setRefetchReviews] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -92,7 +94,7 @@ const Book = () => {
     if (showReviews) {
       fetchReviews();
     }
-  }, [id, showReviews]);
+  }, [id, showReviews, refetchReviews]);
 
   const handleReviewSubmit = async () => {
     try {
@@ -103,20 +105,21 @@ const Book = () => {
       if (response.status === 201) {
         setReviews((prev) => [...prev, response.data]);
         setNewReview({ rating: 0, comment: "" });
+        setRefetchReviews((prev) => !prev);
       } else {
         setError("Failed to add review.");
+        toast.error(`Failed to add review: ${response.data.message}`);
       }
     } catch (error) {
       setError("An error occurred while adding the review.");
+      if (error instanceof AxiosError) {
+        toast.error(`${error.response?.data.message}`);
+      }
     }
   };
 
   if (loading) {
     return <p className="text-center text-gray-700">Loading...</p>;
-  }
-
-  if (error) {
-    return <p className="text-center text-red-500">{error}</p>;
   }
 
   return (

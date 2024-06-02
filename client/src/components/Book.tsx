@@ -88,6 +88,12 @@ const Book = ({ book }: BookProps) => {
           <p className="text-sm text-gray-500">
             <span className="font-semibold">Authors:</span> {book.authors.join(", ")}
           </p>
+          {/* isbn */}
+
+          <p className="text-sm text-gray-500">
+            <span className="font-semibold">ISBN:</span> {book.isbn}
+          </p>
+
           <p className="text-sm text-gray-500">
             <span className="font-semibold">Published Date:</span> {new Date(book.publishedDate).toLocaleDateString()}
           </p>

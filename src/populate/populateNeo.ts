@@ -14,7 +14,7 @@ export const populateNeo = async () => {
     const con = await sql.connect(mssqlConfig);
 
     const result = await con.query(`
-        SELECT u.UserID, u.FirstName, u.LastName, u.DateOfBirth, u.Email, u.Gender, b.ISBN, b.Title, r.ReviewID, r.Rating, r.Comment, r.CreatedAt
+        SELECT u.UserID, u.FirstName, u.LastName, u.DateOfBirth, u.Email, u.DateOfBirth, u.Gender, b.ISBN, b.Title, r.ReviewID, r.Rating, r.Comment, r.CreatedAt
         FROM Reviews r
         JOIN Users u ON r.UserID = u.UserID
         JOIN Books b ON r.ISBN = b.ISBN
@@ -25,23 +25,26 @@ export const populateNeo = async () => {
     await con.close();
 
     for (const record of result.recordset) {
-      const { UserID, FirstName, LastName, Email, ISBN, Title, ReviewID, Rating, Comment } = record;
+      const { UserID, FirstName, LastName, Email, Gender, DateOfBirth, ISBN, Title, ReviewID, Rating, Comment } =
+        record;
 
       // get genre from bookmetadata mongo
-      const data = await BookMetadata.findOne({ isbn: ISBN });
-      const genre = data?.genre || "";
+      const data: any = await BookMetadata.findOne({ isbn: ISBN });
+      const genre: string = data?.genres[0] || "";
 
       // Create User node
       await cypher(
         `
         MERGE (u:User {UserID: $UserID})
-        ON CREATE SET u.FirstName = $FirstName, u.LastName = $LastName, u.Email = $Email
+        ON CREATE SET u.FirstName = $FirstName, u.LastName = $LastName, u.Email = $Email, u.DateOfBirth = $DateOfBirth, u.Gender = $Gender
       `,
         {
           UserID: UserID,
           FirstName: FirstName || "",
           LastName: LastName || "",
           Email: Email || "",
+          DateOfBirth: new Date(DateOfBirth[0]).toLocaleDateString(),
+          Gender: Gender,
         }
       );
 

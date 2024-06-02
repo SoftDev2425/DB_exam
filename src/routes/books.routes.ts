@@ -5,7 +5,8 @@ import BookMetadata from "../models/bookmetdata.model";
 import { redisClient } from "../../redis/client";
 import { CustomRequest } from "../ICustomRequest";
 import UserPreferences from "../models/userpreferences.model";
-import { pipeline } from "zod";
+import { cypher } from "../utils/neo4jConnection";
+import { Record } from "neo4j-driver";
 
 const booksRouter = Router();
 
@@ -56,6 +57,7 @@ booksRouter.get("/search", async (req: Request, res: Response) => {
             { authors: { $regex: searchTerm, $options: "i" } },
             { genres: { $regex: searchTerm, $options: "i" } },
             { publisher: { $regex: searchTerm, $options: "i" } },
+            { isbn: { $regex: searchTerm, $options: "i" } },
           ],
         },
       },
@@ -267,9 +269,18 @@ booksRouter.post("/isbn/:isbn/reviews", async (req: CustomRequest, res: Response
       }
     );
 
+    await cypher(
+      `
+      MATCH (u:User {UserID: $userId})
+      MATCH (b:Book {ISBN: $isbn})
+      CREATE (u)-[:REVIEWED { Rating: $rating, Comment: $comment}]->(b)
+    `,
+      { userId, isbn, rating, comment }
+    );
+
     await con.close();
     res.status(201).json(updatedBook);
-  } catch (error) {
+  } catch (error: any) {
     if (error.number === 51000) {
       return res.status(400).json({ message: error.message });
     }
@@ -342,7 +353,7 @@ booksRouter.post("/:isbn/wishlist", async (req: CustomRequest, res: Response) =>
     }
 
     res.status(201).json(userPreferences);
-  } catch (error) {
+  } catch (error: any) {
     if (error.number === 52000) {
       return res.status(400).json({ message: error.message });
     }
@@ -375,7 +386,7 @@ booksRouter.delete("/:isbn/wishlist", async (req: CustomRequest, res: Response) 
     }
 
     res.status(200).json(userPreferences);
-  } catch (error) {
+  } catch (error: any) {
     if (error.number === 52000) {
       return res.status(400).json({ message: error.message });
     }
@@ -533,11 +544,69 @@ booksRouter.put("/isbn/:isbn/stock", async (req: Request, res: Response) => {
 
 booksRouter.get("/recommendations", async (req: CustomRequest, res: Response) => {
   try {
-    res.status(200).json({ message: "Recommendations" });
+    const userId = req.userId;
+
+    if (!userId) return res.status(400).json({ message: "User ID is required!" });
+
+    // Query to find books recommended for the user
+    const recommendations = await getRecommendations(userId);
+
+    res.status(200).json({ recommendedBooks: recommendations });
   } catch (error) {
     console.error("Error fetching recommendations:", error);
     res.status(500).json({ message: "Internal server error", error });
   }
 });
+
+async function getRecommendations(userId: string) {
+  try {
+    // Neo4j query to find recommendations based on user's preferences and similar users
+    const result: Record[] = await cypher(
+      `
+      MATCH (u:User {UserID: $userId})
+      WITH u, datetime().year - toInteger(split(u.DateOfBirth, '/')[2]) AS age
+      WITH u, CASE
+          WHEN age <= 18 THEN '0-18'
+          WHEN age <= 30 THEN '19-30'
+          WHEN age <= 40 THEN '31-40'
+          WHEN age <= 55 THEN '41-55'
+          WHEN age <= 70 THEN '56-70'
+          ELSE '70+'
+      END AS ageRange
+      MATCH (otherUser:User {Gender: u.Gender})
+      WITH u, otherUser, ageRange, datetime().year - toInteger(split(otherUser.DateOfBirth, '/')[2]) AS otherAge
+      WITH u, otherUser, ageRange, CASE
+          WHEN otherAge <= 18 THEN '0-18'
+          WHEN otherAge <= 30 THEN '19-30'
+          WHEN otherAge <= 40 THEN '31-40'
+          WHEN otherAge <= 55 THEN '41-55'
+          WHEN otherAge <= 70 THEN '56-70'
+          ELSE '70+'
+      END AS otherAgeRange
+      WHERE ageRange = otherAgeRange
+      MATCH (otherUser)-[rr:REVIEWED]->(b:Book)
+      WHERE rr.Rating >= 3.5
+      WITH DISTINCT b.ISBN AS recommendedISBN
+      RETURN recommendedISBN      
+        `,
+      { userId: userId }
+    );
+
+    // Process the results and return recommendations
+    const recommendations = result.map((record: any) => {
+      return {
+        ISBN: record.get("recommendedISBN"),
+      };
+    });
+
+    // Return book data for the recommended ISBNs
+    const recommendedBooks = await BookMetadata.find({ isbn: { $in: recommendations.map((r) => r.ISBN) } });
+
+    return recommendedBooks;
+  } catch (error) {
+    console.error("Error fetching recommendations:", error);
+    throw error; // Propagate the error to the caller
+  }
+}
 
 export default booksRouter;

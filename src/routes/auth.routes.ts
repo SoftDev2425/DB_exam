@@ -58,7 +58,7 @@ router.post("/register", async (req: Request, res: Response) => {
 
     await con.close();
     res.status(201).json({ message: "User created successfully!" });
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
 
     if (error instanceof ZodError) {

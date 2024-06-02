@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthContext } from "@/context/AuthContext";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 // import { useAuth } from "@/AuthContext";
 
 const Login: React.FC = () => {
@@ -14,23 +15,30 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    const res = await axios.post(
-      "http://localhost:3000/api/auth/login",
-      {
-        email: email,
-        password: password,
-      },
-      { withCredentials: true }
-    );
+    try {
+      const res = await axios.post(
+        "http://localhost:3000/api/auth/login",
+        {
+          email: email,
+          password: password,
+        },
+        { withCredentials: true }
+      );
 
-    console.log(res);
+      console.log(res);
 
-    if (res.status !== 200) {
-      return;
+      if (res.status !== 200) {
+        return;
+      }
+
+      setAuthenticated(true);
+      navigate("/");
+    } catch (error) {
+      console.error(error);
+      if(error instanceof AxiosError) {
+        toast.error(error.response?.data.message)
+      }
     }
-
-    setAuthenticated(true);
-    navigate("/");
   };
 
   return (
