@@ -9,10 +9,10 @@ import UserPreferences from "../models/userpreferences.model";
 import { v4 as uuidv4 } from "uuid";
 
 // New Router instance
-const router = Router();
+const authRoutes = Router();
 
 // Home routes
-router.post("/register", async (req: Request, res: Response) => {
+authRoutes.post("/register", async (req: Request, res: Response) => {
   try {
     // Validate the received registration details
     UserSchema.parse(req.body);
@@ -74,7 +74,7 @@ router.post("/register", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/login", async (req: Request, res: Response) => {
+authRoutes.post("/login", async (req: Request, res: Response) => {
   try {
     // Validate the received login details
     UserLoginSchema.parse(req.body);
@@ -137,7 +137,7 @@ router.post("/login", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/logout", async (req: Request, res: Response) => {
+authRoutes.post("/logout", async (req: Request, res: Response) => {
   try {
     // Get the session token from the cookie
     const sessionToken = req.cookies.sessionToken;
@@ -170,4 +170,4 @@ router.post("/logout", async (req: Request, res: Response) => {
   }
 });
 
-export default router;
+export default authRoutes;

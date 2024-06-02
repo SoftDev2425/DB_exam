@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import { CustomRequest } from "../ICustomRequest";
 import { mssqlConfig } from "../utils/mssqlConnection";
 import sql from "mssql";
@@ -7,10 +7,10 @@ import BookMetadata from "../models/bookmetdata.model";
 import { redisClient } from "../../redis/client";
 
 // New Router instance
-const router = Router();
+const usersRouter = Router();
 
 // Users routes
-router.get("/preferences", async (req: CustomRequest, res: Response) => {
+usersRouter.get("/preferences", async (req: CustomRequest, res: Response) => {
   try {
     const userId = req.userId;
 
@@ -27,7 +27,7 @@ router.get("/preferences", async (req: CustomRequest, res: Response) => {
   }
 });
 
-router.put("/preferences", async (req: CustomRequest, res: Response) => {
+usersRouter.put("/preferences", async (req: CustomRequest, res: Response) => {
   try {
     const userId = req.userId;
 
@@ -100,7 +100,7 @@ router.put("/preferences", async (req: CustomRequest, res: Response) => {
   }
 });
 
-router.delete("/delete", async (req: CustomRequest, res: Response) => {
+usersRouter.delete("/delete", async (req: CustomRequest, res: Response) => {
   try {
     const userId = req.userId;
 
@@ -134,4 +134,4 @@ router.delete("/delete", async (req: CustomRequest, res: Response) => {
   }
 });
 
-export default router;
+export default usersRouter;

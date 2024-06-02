@@ -68,7 +68,7 @@ const Search = () => {
     <div className="flex flex-col items-center justify-center ">
       <div className="flex space-x-2 mb-4">
         <Input
-          placeholder="Search for books, authors,"
+          placeholder="Search for books, authors, isbn..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full sm:w-96"
