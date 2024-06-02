@@ -7,24 +7,38 @@ This repository contains the code for the DB_Exam project.
 ## Installation
 
 1. Clone the repository: `git clone https://github.com/your-username/DB_Exam.git`
-2. Install the required dependencies: `npm install`
 
 ## Usage
 
-.--.-.-.-.-.
+1. In the root directory run `docker-compose up -d` to start all necessary databases.
+   - This includes instances for the following databases: MSSQL, MongoDB, Neo4j and Redis.
+2. Create a `.env`-file in the root.
 
-1. In root dir run `docker-compose up -d` to start all necessary databases.
-2. Run `npm run seed`. This will create the necessary tables, procedures and populate the database (Might take couple of seconds - be patient 😁)
-3. Run `npm run neo`. This will add data to the neo4j database.
+   - Add the following to the `.env`
 
-## Contributing
+     ```ts
+     REDIS_URL = "redis://:example@localhost:6379";
+     ```
 
-Contributions are welcome! Please follow the guidelines in the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+     Make sure the URL matches your configs.
 
-## License
+3. Navigate to `./src/utils` and create a copy of `mssqlConnection.template.ts`
 
-This project is licensed under the [MIT License](LICENSE).
+   - Rename it to `mssqlConnection.ts` and add your own configurations. Check the dockerfile for the config details if you haven't configured it already.
 
-## Contact
+4. Run `npm run seed`. This will create the necessary tables, procedures and populate the database (Might take couple of seconds - be patient 😁)
+5. Now run `npm run neo`. This will add data to the neo4j database.
+6. Now run `npm run dev` to start the server
+7. Server should now be running on `http://localhost:3000`
+8. Check all endpoints via postman here:
+   - [Link to postman collection](https://red-comet-2078.postman.co/workspace/New-Team-Workspace~c846f6ad-58fa-4d8e-95f5-4668ec5fa5ff/collection/23276106-3d43f5c1-4dd3-41d9-a392-c36f70cd96f2?action=share&creator=23276106)
 
-If you have any questions or suggestions, feel free to reach out to us at [email@example.com](mailto:email@example.com).
+### Early access client
+
+To use the endpoints via the client:
+
+1. Run `npm run dev` to start the server
+2. Open another terminal and run `cd client`
+3. Run `npm i`
+4. Now run `npm run dev` to start the client
+5. Open ` http://localhost:5173/` in your browser.
