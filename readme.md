@@ -59,8 +59,7 @@ The server should now be running on `http://localhost:3000`
 
 7. API Documentation
    - Check all endpoints via postman: [Link to postman collection](https://red-comet-2078.postman.co/workspace/New-Team-Workspace~c846f6ad-58fa-4d8e-95f5-4668ec5fa5ff/collection/23276106-3d43f5c1-4dd3-41d9-a392-c36f70cd96f2?action=share&creator=23276106) (Requires login, but is very useful!)
-![Postman collections](https://github.com/SoftDev2425/DB_exam/blob/master/images/others/PostmanCollection.png)
-
+     <img src="https://github.com/SoftDev2425/DB_exam/blob/master/images/others/PostmanCollection.png"  height="400" />
 
 ### Early access client
 
