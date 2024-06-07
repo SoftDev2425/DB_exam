@@ -84,6 +84,11 @@ const Search = () => {
           </span>
         </div>
       )}
+      <div className="mb-2">
+        {books.totalPages > 1 && (
+          <Pagination currentPage={page} totalPages={books.totalPages} onPageChange={handlePageChange} />
+        )}
+      </div>
 
       {/* change limit */}
       {books && books.books && books.books.length > 0 && (
